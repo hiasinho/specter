@@ -7,7 +7,7 @@ A CLI for syncing markdown documents with the Specter service. Single Go binary,
 Create a `.specter` config in your repo root:
 
 ```yaml
-project: my-project-slug
+project: my-username/my-project
 paths:
   - specs/
   - docs/architecture/

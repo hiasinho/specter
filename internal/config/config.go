@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,11 +32,26 @@ func Load(dir string) (*Config, error) {
 		return nil, fmt.Errorf(".specter config missing required field: project")
 	}
 
+	parts := strings.SplitN(cfg.Project, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return nil, fmt.Errorf(".specter config: project must be in owner/slug format (e.g. hiasinho/specter)")
+	}
+
 	if len(cfg.Paths) == 0 {
 		return nil, fmt.Errorf(".specter config missing required field: paths")
 	}
 
 	return &cfg, nil
+}
+
+// ProjectOwner returns the owner part of the project identifier.
+func (c *Config) ProjectOwner() string {
+	return strings.SplitN(c.Project, "/", 2)[0]
+}
+
+// ProjectSlug returns the slug part of the project identifier.
+func (c *Config) ProjectSlug() string {
+	return strings.SplitN(c.Project, "/", 2)[1]
 }
 
 // FindRepoRoot walks up from dir looking for a .specter file.

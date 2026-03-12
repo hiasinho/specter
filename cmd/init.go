@@ -37,16 +37,16 @@ var initCmd = &cobra.Command{
 
 		name := initName
 		if name == "" {
-			name = cfg.Project
+			name = cfg.ProjectSlug()
 		}
 
 		client := api.NewClient(token)
-		project, err := client.CreateProject(cfg.Project, name)
+		project, err := client.CreateProject(cfg.ProjectSlug(), name)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Project created: %s (%s)\n", project.Name, project.Slug)
+		fmt.Printf("Project created: %s (%s)\n", project.Name, project.FullName)
 		return nil
 	},
 }

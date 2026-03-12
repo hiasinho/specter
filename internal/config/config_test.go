@@ -11,15 +11,21 @@ func TestLoad(t *testing.T) {
 	specterFile := filepath.Join(dir, ".specter")
 
 	t.Run("valid config", func(t *testing.T) {
-		content := "project: my-project\npaths:\n  - specs/\n  - docs/\nexclude:\n  - drafts/\n"
+		content := "project: hiasinho/my-project\npaths:\n  - specs/\n  - docs/\nexclude:\n  - drafts/\n"
 		os.WriteFile(specterFile, []byte(content), 0644)
 
 		cfg, err := Load(dir)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if cfg.Project != "my-project" {
-			t.Errorf("expected project 'my-project', got %q", cfg.Project)
+		if cfg.Project != "hiasinho/my-project" {
+			t.Errorf("expected project 'hiasinho/my-project', got %q", cfg.Project)
+		}
+		if cfg.ProjectOwner() != "hiasinho" {
+			t.Errorf("expected owner 'hiasinho', got %q", cfg.ProjectOwner())
+		}
+		if cfg.ProjectSlug() != "my-project" {
+			t.Errorf("expected slug 'my-project', got %q", cfg.ProjectSlug())
 		}
 		if len(cfg.Paths) != 2 {
 			t.Errorf("expected 2 paths, got %d", len(cfg.Paths))
@@ -38,10 +44,18 @@ func TestLoad(t *testing.T) {
 	})
 
 	t.Run("missing paths", func(t *testing.T) {
-		os.WriteFile(specterFile, []byte("project: foo\n"), 0644)
+		os.WriteFile(specterFile, []byte("project: owner/foo\n"), 0644)
 		_, err := Load(dir)
 		if err == nil {
 			t.Fatal("expected error for missing paths")
+		}
+	})
+
+	t.Run("bare slug without owner", func(t *testing.T) {
+		os.WriteFile(specterFile, []byte("project: my-project\npaths:\n  - specs/\n"), 0644)
+		_, err := Load(dir)
+		if err == nil {
+			t.Fatal("expected error for bare slug without owner")
 		}
 	})
 

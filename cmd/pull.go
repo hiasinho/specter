@@ -43,13 +43,13 @@ var pullCmd = &cobra.Command{
 			return err
 		}
 
-		lastRevision, err := syncstate.ReadLastRevision(repoRoot)
+		state, err := syncstate.ReadState(repoRoot)
 		if err != nil {
 			return err
 		}
 
 		client := api.NewClient(token)
-		result, err := client.Pull(cfg.Project, branch, lastRevision)
+		result, err := client.Pull(cfg.Project, branch, state.LastRevision)
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,9 @@ var pullCmd = &cobra.Command{
 		}
 
 		if maxRevision > 0 {
-			if err := syncstate.WriteLastRevision(repoRoot, maxRevision); err != nil {
+			state.LastRevision = &maxRevision
+			state.SyncedAt = result.SyncedAt
+			if err := syncstate.WriteState(repoRoot, state); err != nil {
 				return err
 			}
 		}

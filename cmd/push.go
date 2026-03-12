@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -8,8 +9,11 @@ import (
 	"github.com/hiasinho/specter/internal/config"
 	"github.com/hiasinho/specter/internal/documents"
 	"github.com/hiasinho/specter/internal/git"
+	syncstate "github.com/hiasinho/specter/internal/sync"
 	"github.com/spf13/cobra"
 )
+
+var pushForce bool
 
 var pushCmd = &cobra.Command{
 	Use:   "push",
@@ -50,12 +54,31 @@ var pushCmd = &cobra.Command{
 			return nil
 		}
 
-		client := api.NewClient(token)
-		result, err := client.Push(cfg.Project, &api.SyncPushRequest{
+		state, err := syncstate.ReadState(repoRoot)
+		if err != nil {
+			return err
+		}
+
+		req := &api.SyncPushRequest{
 			Branch:    branch,
 			Documents: docs,
-		})
+		}
+		if !pushForce && state.SyncedAt != "" {
+			req.BaseRevision = state.SyncedAt
+		}
+
+		client := api.NewClient(token)
+		result, err := client.Push(cfg.Project, req)
 		if err != nil {
+			var conflict *api.ConflictError
+			if errors.As(err, &conflict) {
+				fmt.Fprintf(os.Stderr, "Push rejected: %d document(s) modified on server since last pull:\n", len(conflict.Conflicts))
+				for _, c := range conflict.Conflicts {
+					fmt.Fprintf(os.Stderr, "  ! %s (server revision %d)\n", c.Path, c.ServerRevision)
+				}
+				fmt.Fprintf(os.Stderr, "\nRun `specter pull` to sync, then push again.\n")
+				return fmt.Errorf("push aborted due to conflicts")
+			}
 			return err
 		}
 
@@ -81,5 +104,6 @@ var pushCmd = &cobra.Command{
 }
 
 func init() {
+	pushCmd.Flags().BoolVar(&pushForce, "force", false, "Skip conflict detection (last write wins)")
 	rootCmd.AddCommand(pushCmd)
 }

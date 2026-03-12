@@ -75,16 +75,25 @@ func (c *Client) CreateProject(slug, name string) (*Project, error) {
 
 // Push bulk-pushes documents to the service.
 func (c *Client) Push(project string, req *SyncPushRequest) (*SyncPushResponse, error) {
-	resp, err := c.do("POST", fmt.Sprintf("/sync/%s", url.PathEscape(project)), req)
+	resp, err := c.do("POST", fmt.Sprintf("/sync/%s", project), req)
 	if err != nil {
 		return nil, err
+	}
+	if resp.StatusCode == http.StatusConflict {
+		defer resp.Body.Close()
+		var conflict ConflictError
+		if err := json.NewDecoder(resp.Body).Decode(&conflict); err != nil {
+			body, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("API error (409): %s", string(body))
+		}
+		return nil, &conflict
 	}
 	return decodeResponse[SyncPushResponse](resp)
 }
 
 // Pull fetches documents changed since a given revision.
 func (c *Client) Pull(project, branch string, sinceRevision *int) (*SyncPullResponse, error) {
-	path := fmt.Sprintf("/sync/%s?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
+	path := fmt.Sprintf("/sync/%s?branch=%s", project, url.QueryEscape(branch))
 	if sinceRevision != nil {
 		path += fmt.Sprintf("&since=%d", *sinceRevision)
 	}
@@ -97,7 +106,7 @@ func (c *Client) Pull(project, branch string, sinceRevision *int) (*SyncPullResp
 
 // ListDocuments fetches all documents for a project and branch.
 func (c *Client) ListDocuments(project, branch string) ([]Document, error) {
-	path := fmt.Sprintf("/documents/%s?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
+	path := fmt.Sprintf("/documents/%s?branch=%s", project, url.QueryEscape(branch))
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -112,7 +121,7 @@ func (c *Client) ListDocuments(project, branch string) ([]Document, error) {
 // GetDocument fetches a single document.
 func (c *Client) GetDocument(project, branch, docPath string) (*Document, error) {
 	path := fmt.Sprintf("/documents/%s/%s?branch=%s",
-		url.PathEscape(project), docPath, url.QueryEscape(branch))
+		project, docPath, url.QueryEscape(branch))
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -129,7 +138,7 @@ func (c *Client) ListProposals(project, document, status string) ([]Proposal, er
 	if status != "" {
 		params.Set("status", status)
 	}
-	path := fmt.Sprintf("/proposals/%s", url.PathEscape(project))
+	path := fmt.Sprintf("/proposals/%s", project)
 	if len(params) > 0 {
 		path += "?" + params.Encode()
 	}
@@ -146,7 +155,7 @@ func (c *Client) ListProposals(project, document, status string) ([]Proposal, er
 
 // CreateProposal creates a new proposal.
 func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, error) {
-	resp, err := c.do("POST", fmt.Sprintf("/proposals/%s", url.PathEscape(project)), proposal)
+	resp, err := c.do("POST", fmt.Sprintf("/proposals/%s", project), proposal)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +165,7 @@ func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, 
 // UpdateProposalStatus accepts or rejects a proposal.
 func (c *Client) UpdateProposalStatus(project, id, status string) error {
 	body := map[string]string{"status": status}
-	resp, err := c.do("PATCH", fmt.Sprintf("/proposals/%s/%s", url.PathEscape(project), url.PathEscape(id)), body)
+	resp, err := c.do("PATCH", fmt.Sprintf("/proposals/%s/%s", project, id), body)
 	if err != nil {
 		return err
 	}

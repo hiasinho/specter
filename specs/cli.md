@@ -12,7 +12,7 @@ A Go binary for syncing markdown documents with the Specter service. Reads a `.s
 A `.specter` file in the repository root:
 
 ```yaml
-project: my-project-slug
+project: my-username/my-project
 paths:
   - specs/
   - docs/architecture/
@@ -21,7 +21,7 @@ exclude:
   - "**/_wip_*.md"
 ```
 
-- **project** — the project slug on the Specter service
+- **project** — the project identifier in `owner/slug` format (e.g. `hiasinho/specter`)
 - **paths** — directories to sync (relative to repo root)
 - **exclude** — glob patterns for files/folders to skip within synced paths
 
@@ -33,11 +33,11 @@ The CLI reads `SPECTER_TOKEN` from the environment. The token authenticates all 
 
 ### `specter push`
 
-Sync local documents to the service. Reads `.specter` config, detects the current git branch, and pushes all matching documents via `POST /sync/:project`.
+Sync local documents to the service. Reads `.specter` config, detects the current git branch, and pushes all matching documents via `POST /sync/:owner/:slug`.
 
 ### `specter pull`
 
-Sync documents from the service to local. Fetches changes via `GET /sync/:project` and writes updated files back to their local paths. Tracks last sync timestamp in `.specter-sync`.
+Sync documents from the service to local. Fetches changes via `GET /sync/:owner/:slug` and writes updated files back to their local paths. Tracks last sync timestamp in `.specter-sync`.
 
 ### `specter status`
 

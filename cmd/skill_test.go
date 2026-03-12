@@ -11,14 +11,14 @@ import (
 
 func TestGenerateSkillBlock(t *testing.T) {
 	cfg := &config.Config{
-		Project: "test-project",
+		Project: "testowner/test-project",
 		Paths:   []string{"docs/"},
 	}
 
 	result := generateSkillBlock(cfg)
 
 	t.Run("contains project name", func(t *testing.T) {
-		if !strings.Contains(result, "test-project") {
+		if !strings.Contains(result, "testowner/test-project") {
 			t.Error("expected output to contain project name")
 		}
 	})

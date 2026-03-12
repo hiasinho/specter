@@ -1,72 +1,92 @@
 package sync
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-func TestReadLastRevision(t *testing.T) {
+func TestReadState(t *testing.T) {
 	t.Run("no state file", func(t *testing.T) {
 		dir := t.TempDir()
-		rev, err := ReadLastRevision(dir)
+		state, err := ReadState(dir)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if rev != nil {
-			t.Errorf("expected nil, got %d", *rev)
+		if state.LastRevision != nil {
+			t.Errorf("expected nil LastRevision, got %d", *state.LastRevision)
+		}
+		if state.SyncedAt != "" {
+			t.Errorf("expected empty SyncedAt, got %q", state.SyncedAt)
 		}
 	})
 
-	t.Run("valid state file", func(t *testing.T) {
+	t.Run("legacy integer format", func(t *testing.T) {
 		dir := t.TempDir()
 		os.WriteFile(filepath.Join(dir, ".specter-sync"), []byte("42\n"), 0644)
 
-		rev, err := ReadLastRevision(dir)
+		state, err := ReadState(dir)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if rev == nil {
-			t.Fatal("expected non-nil revision")
+		if state.LastRevision == nil || *state.LastRevision != 42 {
+			t.Errorf("expected LastRevision 42, got %v", state.LastRevision)
 		}
-		if *rev != 42 {
-			t.Errorf("expected 42, got %d", *rev)
+		if state.SyncedAt != "" {
+			t.Errorf("expected empty SyncedAt for legacy format")
+		}
+	})
+
+	t.Run("json format", func(t *testing.T) {
+		dir := t.TempDir()
+		rev := 10
+		state := SyncState{LastRevision: &rev, SyncedAt: "2025-01-01T00:00:00Z"}
+		data, _ := json.Marshal(state)
+		os.WriteFile(filepath.Join(dir, ".specter-sync"), data, 0644)
+
+		got, err := ReadState(dir)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got.LastRevision == nil || *got.LastRevision != 10 {
+			t.Errorf("expected LastRevision 10, got %v", got.LastRevision)
+		}
+		if got.SyncedAt != "2025-01-01T00:00:00Z" {
+			t.Errorf("expected SyncedAt '2025-01-01T00:00:00Z', got %q", got.SyncedAt)
 		}
 	})
 
 	t.Run("invalid content", func(t *testing.T) {
 		dir := t.TempDir()
-		os.WriteFile(filepath.Join(dir, ".specter-sync"), []byte("not-a-number"), 0644)
+		os.WriteFile(filepath.Join(dir, ".specter-sync"), []byte("not-valid"), 0644)
 
-		_, err := ReadLastRevision(dir)
+		_, err := ReadState(dir)
 		if err == nil {
 			t.Fatal("expected error for invalid content")
 		}
 	})
 }
 
-func TestWriteLastRevision(t *testing.T) {
+func TestWriteState(t *testing.T) {
 	dir := t.TempDir()
+	rev := 99
+	state := &SyncState{LastRevision: &rev, SyncedAt: "2025-06-15T12:00:00Z"}
 
-	err := WriteLastRevision(dir, 99)
+	err := WriteState(dir, state)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
-	}
-
-	data, err := os.ReadFile(filepath.Join(dir, ".specter-sync"))
-	if err != nil {
-		t.Fatalf("unexpected error reading file: %v", err)
-	}
-	if string(data) != "99\n" {
-		t.Errorf("expected '99\\n', got %q", string(data))
 	}
 
 	// Verify round-trip
-	rev, err := ReadLastRevision(dir)
+	got, err := ReadState(dir)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if *rev != 99 {
-		t.Errorf("expected 99, got %d", *rev)
+	if got.LastRevision == nil || *got.LastRevision != 99 {
+		t.Errorf("expected LastRevision 99, got %v", got.LastRevision)
+	}
+	if got.SyncedAt != "2025-06-15T12:00:00Z" {
+		t.Errorf("expected SyncedAt '2025-06-15T12:00:00Z', got %q", got.SyncedAt)
 	}
 }

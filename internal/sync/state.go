@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,25 +11,44 @@ import (
 
 const stateFile = ".specter-sync"
 
-// ReadLastRevision reads the last synced revision from .specter-sync.
-func ReadLastRevision(dir string) (*int, error) {
+// SyncState holds the persisted sync state.
+type SyncState struct {
+	LastRevision *int   `json:"last_revision,omitempty"`
+	SyncedAt     string `json:"synced_at,omitempty"`
+}
+
+// ReadState reads the sync state from .specter-sync.
+// Handles both the new JSON format and the legacy integer format.
+func ReadState(dir string) (*SyncState, error) {
 	data, err := os.ReadFile(filepath.Join(dir, stateFile))
 	if os.IsNotExist(err) {
-		return nil, nil
+		return &SyncState{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("reading sync state: %w", err)
 	}
 
-	rev, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	content := strings.TrimSpace(string(data))
+
+	// Try JSON first (new format)
+	var state SyncState
+	if err := json.Unmarshal([]byte(content), &state); err == nil {
+		return &state, nil
+	}
+
+	// Fall back to legacy integer format
+	rev, err := strconv.Atoi(content)
 	if err != nil {
 		return nil, fmt.Errorf("parsing sync state: %w", err)
 	}
-	return &rev, nil
+	return &SyncState{LastRevision: &rev}, nil
 }
 
-// WriteLastRevision writes the last synced revision to .specter-sync.
-func WriteLastRevision(dir string, revision int) error {
-	path := filepath.Join(dir, stateFile)
-	return os.WriteFile(path, []byte(fmt.Sprintf("%d\n", revision)), 0644)
+// WriteState writes the sync state to .specter-sync.
+func WriteState(dir string, state *SyncState) error {
+	data, err := json.Marshal(state)
+	if err != nil {
+		return fmt.Errorf("writing sync state: %w", err)
+	}
+	return os.WriteFile(filepath.Join(dir, stateFile), append(data, '\n'), 0644)
 }
