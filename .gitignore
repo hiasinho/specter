@@ -1,2 +1,5 @@
 specter
 .specter-sync
+
+# bv (beads viewer) local config and caches
+.bv/
