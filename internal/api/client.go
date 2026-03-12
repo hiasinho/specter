@@ -109,3 +109,51 @@ func (c *Client) GetDocument(project, branch, docPath string) (*Document, error)
 	}
 	return decodeResponse[Document](resp)
 }
+
+// ListProposals fetches proposals for a project.
+func (c *Client) ListProposals(project, document, status string) ([]Proposal, error) {
+	params := url.Values{}
+	if document != "" {
+		params.Set("document", document)
+	}
+	if status != "" {
+		params.Set("status", status)
+	}
+	path := fmt.Sprintf("/projects/%s/proposals", url.PathEscape(project))
+	if len(params) > 0 {
+		path += "?" + params.Encode()
+	}
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	result, err := decodeResponse[[]Proposal](resp)
+	if err != nil {
+		return nil, err
+	}
+	return *result, nil
+}
+
+// CreateProposal creates a new proposal.
+func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, error) {
+	resp, err := c.do("POST", fmt.Sprintf("/projects/%s/proposals", url.PathEscape(project)), proposal)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[Proposal](resp)
+}
+
+// UpdateProposalStatus accepts or rejects a proposal.
+func (c *Client) UpdateProposalStatus(project, id, status string) error {
+	body := map[string]string{"status": status}
+	resp, err := c.do("PATCH", fmt.Sprintf("/projects/%s/proposals/%s", url.PathEscape(project), url.PathEscape(id)), body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(b))
+	}
+	return nil
+}

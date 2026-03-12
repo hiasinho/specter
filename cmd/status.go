@@ -83,6 +83,7 @@ var statusCmd = &cobra.Command{
 
 		if len(modified) == 0 && len(localOnly) == 0 && len(remoteOnly) == 0 {
 			fmt.Printf("In sync with %s/%s\n", cfg.Project, branch)
+			showPendingProposals(client, cfg.Project)
 			return nil
 		}
 
@@ -97,6 +98,7 @@ var statusCmd = &cobra.Command{
 			fmt.Printf("  - %s (remote only)\n", p)
 		}
 
+		showPendingProposals(client, cfg.Project)
 		return nil
 	},
 }
