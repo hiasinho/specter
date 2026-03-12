@@ -27,6 +27,13 @@ type SyncPullResponse struct {
 	SyncedAt  string     `json:"synced_at"`
 }
 
+// Project represents a Specter project.
+type Project struct {
+	ID   string `json:"id"`
+	Slug string `json:"slug"`
+	Name string `json:"name"`
+}
+
 // Proposal represents a document proposal.
 type Proposal struct {
 	ID            string `json:"id,omitempty"`

@@ -12,7 +12,7 @@ func TestClient_Push(t *testing.T) {
 		if r.Method != "POST" {
 			t.Errorf("expected POST, got %s", r.Method)
 		}
-		if r.URL.Path != "/projects/my-project/sync" {
+		if r.URL.Path != "/sync/my-project" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		if r.Header.Get("x-specter-token") != "test-token" {
@@ -58,7 +58,7 @@ func TestClient_Pull(t *testing.T) {
 		if r.Method != "GET" {
 			t.Errorf("expected GET, got %s", r.Method)
 		}
-		if r.URL.Path != "/projects/my-project/sync" {
+		if r.URL.Path != "/sync/my-project" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		if r.URL.Query().Get("branch") != "main" {
@@ -114,7 +114,7 @@ func TestClient_PullWithSince(t *testing.T) {
 
 func TestClient_ListDocuments(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/projects/my-project/documents" {
+		if r.URL.Path != "/documents/my-project" {
 			t.Errorf("unexpected path: %s", r.URL.Path)
 		}
 		json.NewEncoder(w).Encode([]Document{

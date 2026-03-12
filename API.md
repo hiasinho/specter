@@ -74,7 +74,7 @@ Delete a project and all its data (branches, documents, memberships, proposals).
 
 ### Invites
 
-#### `POST /projects/:slug/invites`
+#### `POST /invites/:slug`
 
 Create an invite for a role. Owner only.
 
@@ -94,11 +94,11 @@ Redeem an invite. Adds the authenticated user as a member with the invite's role
 
 ### Documents
 
-#### `GET /projects/:slug/documents?branch=:branch`
+#### `GET /documents/:slug?branch=:branch`
 
 List documents for a project and branch.
 
-#### `GET /projects/:slug/documents/:path?branch=:branch`
+#### `GET /documents/:slug/:path?branch=:branch`
 
 Get a single document's content.
 
@@ -107,7 +107,7 @@ Get a single document's content.
 { "path": "specs/foo.md", "content_md": "...", "content_hash": "sha256", "revision": 3 }
 ```
 
-#### `PUT /projects/:slug/documents/:path?branch=:branch`
+#### `PUT /documents/:slug/:path?branch=:branch`
 
 Create or update a document. Requires editor role or above.
 
@@ -116,13 +116,13 @@ Create or update a document. Requires editor role or above.
 { "content_md": "# Document content..." }
 ```
 
-#### `DELETE /projects/:slug/documents/:path?branch=:branch`
+#### `DELETE /documents/:slug/:path?branch=:branch`
 
 Delete a document. Requires editor role or above.
 
 ### Sync
 
-#### `POST /projects/:slug/sync`
+#### `POST /sync/:slug`
 
 Bulk push documents. Used by the CLI's `push` command.
 
@@ -158,7 +158,7 @@ Bulk push documents. Used by the CLI's `push` command.
 }
 ```
 
-#### `GET /projects/:slug/sync?branch=:branch&since=:revision`
+#### `GET /sync/:slug?branch=:branch&since=:revision`
 
 Get documents changed since a revision. Used by the CLI's `pull` command. Omit `since` to get all documents.
 
@@ -174,11 +174,11 @@ Get documents changed since a revision. Used by the CLI's `pull` command. Omit `
 
 ### Proposals
 
-#### `GET /projects/:slug/proposals?document=:path&status=pending`
+#### `GET /proposals/:slug?document=:path&status=pending`
 
 List proposals. Filter by document path and/or status.
 
-#### `POST /projects/:slug/proposals`
+#### `POST /proposals/:slug`
 
 Create a proposal. Requires reviewer role or above.
 
@@ -194,7 +194,7 @@ Create a proposal. Requires reviewer role or above.
 }
 ```
 
-#### `PATCH /projects/:slug/proposals/:id`
+#### `PATCH /proposals/:slug/:id`
 
 Accept or reject a proposal. Requires editor role or above.
 

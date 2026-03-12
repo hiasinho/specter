@@ -63,9 +63,19 @@ func decodeResponse[T any](resp *http.Response) (*T, error) {
 	return &result, nil
 }
 
+// CreateProject creates a new project on the service.
+func (c *Client) CreateProject(slug, name string) (*Project, error) {
+	body := map[string]string{"slug": slug, "name": name}
+	resp, err := c.do("POST", "/projects", body)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[Project](resp)
+}
+
 // Push bulk-pushes documents to the service.
 func (c *Client) Push(project string, req *SyncPushRequest) (*SyncPushResponse, error) {
-	resp, err := c.do("POST", fmt.Sprintf("/projects/%s/sync", url.PathEscape(project)), req)
+	resp, err := c.do("POST", fmt.Sprintf("/sync/%s", url.PathEscape(project)), req)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +84,7 @@ func (c *Client) Push(project string, req *SyncPushRequest) (*SyncPushResponse, 
 
 // Pull fetches documents changed since a given revision.
 func (c *Client) Pull(project, branch string, sinceRevision *int) (*SyncPullResponse, error) {
-	path := fmt.Sprintf("/projects/%s/sync?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
+	path := fmt.Sprintf("/sync/%s?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
 	if sinceRevision != nil {
 		path += fmt.Sprintf("&since=%d", *sinceRevision)
 	}
@@ -87,7 +97,7 @@ func (c *Client) Pull(project, branch string, sinceRevision *int) (*SyncPullResp
 
 // ListDocuments fetches all documents for a project and branch.
 func (c *Client) ListDocuments(project, branch string) ([]Document, error) {
-	path := fmt.Sprintf("/projects/%s/documents?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
+	path := fmt.Sprintf("/documents/%s?branch=%s", url.PathEscape(project), url.QueryEscape(branch))
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -101,8 +111,8 @@ func (c *Client) ListDocuments(project, branch string) ([]Document, error) {
 
 // GetDocument fetches a single document.
 func (c *Client) GetDocument(project, branch, docPath string) (*Document, error) {
-	path := fmt.Sprintf("/projects/%s/documents/%s?branch=%s",
-		url.PathEscape(project), url.PathEscape(docPath), url.QueryEscape(branch))
+	path := fmt.Sprintf("/documents/%s/%s?branch=%s",
+		url.PathEscape(project), docPath, url.QueryEscape(branch))
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -119,7 +129,7 @@ func (c *Client) ListProposals(project, document, status string) ([]Proposal, er
 	if status != "" {
 		params.Set("status", status)
 	}
-	path := fmt.Sprintf("/projects/%s/proposals", url.PathEscape(project))
+	path := fmt.Sprintf("/proposals/%s", url.PathEscape(project))
 	if len(params) > 0 {
 		path += "?" + params.Encode()
 	}
@@ -136,7 +146,7 @@ func (c *Client) ListProposals(project, document, status string) ([]Proposal, er
 
 // CreateProposal creates a new proposal.
 func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, error) {
-	resp, err := c.do("POST", fmt.Sprintf("/projects/%s/proposals", url.PathEscape(project)), proposal)
+	resp, err := c.do("POST", fmt.Sprintf("/proposals/%s", url.PathEscape(project)), proposal)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +156,7 @@ func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, 
 // UpdateProposalStatus accepts or rejects a proposal.
 func (c *Client) UpdateProposalStatus(project, id, status string) error {
 	body := map[string]string{"status": status}
-	resp, err := c.do("PATCH", fmt.Sprintf("/projects/%s/proposals/%s", url.PathEscape(project), url.PathEscape(id)), body)
+	resp, err := c.do("PATCH", fmt.Sprintf("/proposals/%s/%s", url.PathEscape(project), url.PathEscape(id)), body)
 	if err != nil {
 		return err
 	}

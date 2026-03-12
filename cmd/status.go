@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"os"
 
@@ -59,8 +58,6 @@ var statusCmd = &cobra.Command{
 
 		remoteByPath := make(map[string]api.Document)
 		for _, d := range remoteDocs {
-			hash := sha256.Sum256([]byte(d.ContentMD))
-			d.ContentHash = fmt.Sprintf("%x", hash)
 			remoteByPath[d.Path] = d
 		}
 
