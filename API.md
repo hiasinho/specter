@@ -126,6 +126,7 @@ Bulk push documents. Used by the CLI's `push` command.
 ```json
 {
   "branch": "main",
+  "base_revision": "ISO-8601 timestamp (optional)",
   "documents": [
     { "path": "specs/foo.md", "content_md": "..." },
     { "path": "specs/bar.md", "content_md": "..." }
@@ -133,9 +134,24 @@ Bulk push documents. Used by the CLI's `push` command.
 }
 ```
 
-**Response:**
+`base_revision` enables conflict detection. Pass the `synced_at` value from the last pull. If any document was modified on the server after this timestamp (by another user), the entire push is rejected with `409` and a list of conflicts. Omit `base_revision` to force push (last write wins, backwards compatible).
+
+**Response (success):**
 ```json
 { "created": ["specs/foo.md"], "updated": ["specs/bar.md"], "unchanged": [] }
+```
+
+**Response (conflict, 409):**
+```json
+{
+  "error": "Conflicts detected",
+  "conflicts": [
+    { "path": "specs/foo.md", "server_revision": 5, "server_updated_at": "...", "server_hash": "..." }
+  ],
+  "created": [],
+  "updated": [],
+  "unchanged": []
+}
 ```
 
 #### `GET /projects/:slug/sync?branch=:branch&since=:revision`
