@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Run gitleaks on staged changes before committing
+gitleaks git --pre-commit --staged --verbose
