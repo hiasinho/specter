@@ -7,7 +7,19 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
+
+// encodeDocPath encodes each path segment individually so that slashes are
+// preserved as path separators while spaces and other special characters are
+// percent-encoded.
+func encodeDocPath(docPath string) string {
+	segments := strings.Split(docPath, "/")
+	for i, seg := range segments {
+		segments[i] = url.PathEscape(seg)
+	}
+	return strings.Join(segments, "/")
+}
 
 const DefaultBaseURL = "https://yentronrhnmpewiyeqxd.supabase.co/functions/v1"
 
@@ -157,7 +169,7 @@ func (c *Client) ListDocuments(project, branch string) ([]Document, error) {
 // GetDocument fetches a single document.
 func (c *Client) GetDocument(project, branch, docPath string) (*Document, error) {
 	path := fmt.Sprintf("/documents/%s/%s?branch=%s",
-		project, docPath, url.QueryEscape(branch))
+		project, encodeDocPath(docPath), url.QueryEscape(branch))
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -227,7 +239,7 @@ func (c *Client) ListDocumentHistory(project, docPath, branch string, limit int)
 	if limit > 0 {
 		params.Set("limit", fmt.Sprintf("%d", limit))
 	}
-	path := fmt.Sprintf("/document-history/%s/%s/history", project, docPath)
+	path := fmt.Sprintf("/document-history/%s/%s/history", project, encodeDocPath(docPath))
 	if len(params) > 0 {
 		path += "?" + params.Encode()
 	}
@@ -240,7 +252,7 @@ func (c *Client) ListDocumentHistory(project, docPath, branch string, limit int)
 
 // GetDocumentRevision fetches a specific revision's full content.
 func (c *Client) GetDocumentRevision(project, docPath string, revision int) (*DocumentRevision, error) {
-	path := fmt.Sprintf("/document-history/%s/%s/history/%d", project, docPath, revision)
+	path := fmt.Sprintf("/document-history/%s/%s/history/%d", project, encodeDocPath(docPath), revision)
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -258,7 +270,7 @@ func (c *Client) GetDocumentDiff(project, docPath, branch string, from, to int) 
 	if to > 0 {
 		params.Set("to", fmt.Sprintf("%d", to))
 	}
-	path := fmt.Sprintf("/document-history/%s/%s/diff?%s", project, docPath, params.Encode())
+	path := fmt.Sprintf("/document-history/%s/%s/diff?%s", project, encodeDocPath(docPath), params.Encode())
 	resp, err := c.do("GET", path, nil)
 	if err != nil {
 		return nil, err
@@ -274,6 +286,37 @@ func (c *Client) Register(email, username, inviteCode string) (*RegisterResponse
 		return nil, err
 	}
 	return decodeResponse[RegisterResponse](resp)
+}
+
+// PutDocument creates or updates a single document.
+func (c *Client) PutDocument(project, branch, docPath, contentMD string) error {
+	body := map[string]string{"content_md": contentMD}
+	apiPath := fmt.Sprintf("/documents/%s/%s?branch=%s", project, encodeDocPath(docPath), url.QueryEscape(branch))
+	resp, err := c.do("PUT", apiPath, body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(b))
+	}
+	return nil
+}
+
+// DeleteDocument deletes a single document.
+func (c *Client) DeleteDocument(project, branch, docPath string) error {
+	apiPath := fmt.Sprintf("/documents/%s/%s?branch=%s", project, encodeDocPath(docPath), url.QueryEscape(branch))
+	resp, err := c.do("DELETE", apiPath, nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		b, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(b))
+	}
+	return nil
 }
 
 // UpdateProposalStatus accepts or rejects a proposal.

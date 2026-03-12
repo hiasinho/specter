@@ -37,24 +37,31 @@
 
     <!-- Architecture diagram -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-6 sm:p-8 mb-16 overflow-x-auto">
-      <pre class="text-xs sm:text-sm text-zinc-300 leading-relaxed"><code><span class="text-zinc-500">your repo</span>                     <span class="text-zinc-500">specter service</span>                <span class="text-zinc-500">collaborators</span>
+      <pre class="mermaid" style="background: transparent; color: inherit;">%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#18181b', 'primaryTextColor': '#d4d4d8', 'primaryBorderColor': '#3f3f46', 'lineColor': '#52525b', 'secondaryColor': '#27272a', 'tertiaryColor': '#27272a', 'clusterBkg': '#27272a', 'clusterBorder': '#3f3f46', 'edgeLabelBackground': '#27272a', 'fontFamily': 'JetBrains Mono, monospace'}}}%%
+flowchart LR
+    subgraph repo["your repo"]
+        R1["specs/\ndocs/\n.specter"]
+        R2["specter push\nspecter pull\nspecter status\nspecter diff\nspecter history\nspecter proposals\nspecter invite\nspecter register"]
+    end
 
-┌──────────────┐    push    ┌───────────────────┐    read    ┌──────────────┐
-│  specs/      │───────────▶│                   │◀───────────│  Teammates   │
-│  docs/       │◀───────────│   Documents       │            │              │
-│              │    pull    │   ├─ versioned     │  propose   ├──────────────┤
-│  .specter    │            │   ├─ branch-aware  │───────────▶│  AI Agents   │
-│  (config)    │            │   └─ hash-tracked  │            │              │
-└──────────────┘            │                   │  review    ├──────────────┤
-                            │   Proposals       │◀───────────│  Reviewers   │
-  <span class="text-emerald-400">specter push</span>               │   ├─ replace      │            └──────────────┘
-  <span class="text-emerald-400">specter pull</span>               │   ├─ insert       │
-  <span class="text-emerald-400">specter status</span>             │   ├─ delete       │            <span class="text-zinc-500">roles:</span>
-  <span class="text-emerald-400">specter diff</span>               │   └─ annotate     │            owner / editor
-  <span class="text-emerald-400">specter history</span>            │                   │            reviewer / reader
-  <span class="text-emerald-400">specter proposals</span>          │   Access Control  │
-  <span class="text-emerald-400">specter invite</span>             │   └─ invite codes │
-  <span class="text-emerald-400">specter register</span>           └───────────────────┘</code></pre>
+    subgraph svc["specter service"]
+        D["Documents\n─ versioned\n─ branch-aware\n─ hash-tracked"]
+        P["Proposals\n─ replace\n─ insert\n─ delete\n─ annotate"]
+        A["Access Control\n─ invite codes"]
+    end
+
+    subgraph collab["collaborators"]
+        TM["Teammates\nreader / editor"]
+        AI["AI Agents\nreader / editor"]
+        RV["Reviewers\nreviewer"]
+    end
+
+    R1 -- push --> D
+    D -- pull --> R1
+    TM -- read --> D
+    AI -- propose --> P
+    RV -- review --> P
+</pre>
     </div>
 
     <!-- Three steps -->
@@ -202,5 +209,7 @@ POST /proposals/acme/api-specs
     <p class="text-zinc-600 text-sm">Specter</p>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad: true});</script>
 </body>
 </html>

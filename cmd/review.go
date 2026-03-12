@@ -43,7 +43,11 @@ var reviewCmd = &cobra.Command{
 
 		client := api.NewClient(token)
 		// API expects "accepted"/"rejected"
-		status := action + "ed"
+		actionToStatus := map[string]string{
+			"accept": "accepted",
+			"reject": "rejected",
+		}
+		status := actionToStatus[action]
 		if err := client.UpdateProposalStatus(cfg.Project, id, status); err != nil {
 			return err
 		}
