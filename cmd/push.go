@@ -82,6 +82,13 @@ var pushCmd = &cobra.Command{
 			return err
 		}
 
+		if result.SyncedAt != "" {
+			state.SyncedAt = result.SyncedAt
+			if err := syncstate.WriteState(repoRoot, state); err != nil {
+				return fmt.Errorf("updating sync state: %w", err)
+			}
+		}
+
 		fmt.Printf("Pushed to %s/%s:\n", cfg.Project, branch)
 		if len(result.Created) > 0 {
 			fmt.Printf("  created: %d\n", len(result.Created))

@@ -198,6 +198,26 @@ func (c *Client) CreateProposal(project string, proposal *Proposal) (*Proposal, 
 	return decodeResponse[Proposal](resp)
 }
 
+// CreateInvite creates an invite for a project role. Owner only.
+func (c *Client) CreateInvite(project, role string) (*Invite, error) {
+	body := map[string]string{"project": project, "role": role}
+	resp, err := c.do("POST", "/invites", body)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[Invite](resp)
+}
+
+// RedeemInvite redeems an invite code, adding the user as a project member.
+func (c *Client) RedeemInvite(code string) (*InviteRedeemResponse, error) {
+	body := map[string]string{"code": code}
+	resp, err := c.do("POST", "/invites/redeem", body)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[InviteRedeemResponse](resp)
+}
+
 // UpdateProposalStatus accepts or rejects a proposal.
 func (c *Client) UpdateProposalStatus(project, id, status string) error {
 	body := map[string]string{"status": status}

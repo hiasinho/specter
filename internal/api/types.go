@@ -22,6 +22,7 @@ type SyncPushResponse struct {
 	Created   []string `json:"created"`
 	Updated   []string `json:"updated"`
 	Unchanged []string `json:"unchanged"`
+	SyncedAt  string   `json:"synced_at"`
 }
 
 // SyncPullResponse is the response from GET /sync/:owner/:slug.
@@ -65,6 +66,18 @@ type User struct {
 	Email       string       `json:"email"`
 	Username    string       `json:"username"`
 	InviteCodes []InviteCode `json:"invite_codes"`
+}
+
+// Invite represents the response from creating an invite.
+type Invite struct {
+	Code string `json:"code"`
+	Role string `json:"role"`
+}
+
+// InviteRedeemResponse represents the response from redeeming an invite.
+type InviteRedeemResponse struct {
+	Project Project `json:"project"`
+	Role    string  `json:"role"`
 }
 
 // ConflictDetail describes a single document conflict from a push.
