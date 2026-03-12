@@ -222,6 +222,57 @@ Get documents changed since a revision. Used by the CLI's `pull` command. Omit `
 }
 ```
 
+### Document History
+
+#### `GET /document-history/:owner/:slug/:path/history?branch=:branch&limit=10`
+
+List revision history for a document. Returns metadata only (no content). Revisions are ordered newest first. Max 100.
+
+**Response:**
+```json
+{
+  "path": "specs/foo.md",
+  "revisions": [
+    {
+      "revision": 5,
+      "content_hash": "sha256",
+      "author": { "id": "uuid", "username": "alice", "email": "alice@example.com" },
+      "created_at": "ISO-8601"
+    }
+  ]
+}
+```
+
+#### `GET /document-history/:owner/:slug/:path/history/:revision`
+
+Get a specific revision's full content.
+
+**Response:**
+```json
+{
+  "path": "specs/foo.md",
+  "revision": 4,
+  "content_md": "# Foo\n\nOld content...",
+  "content_hash": "sha256",
+  "author": { "id": "uuid", "username": "bob", "email": "bob@example.com" },
+  "created_at": "ISO-8601"
+}
+```
+
+#### `GET /document-history/:owner/:slug/:path/diff?branch=:branch&from=:rev&to=:rev`
+
+Compare two revisions. Returns a unified diff (like `git diff`). `from` is required, `to` defaults to latest. Returns 404 if a requested revision has been pruned (only the last 20 revisions per document are retained).
+
+**Response:**
+```json
+{
+  "path": "specs/foo.md",
+  "from_revision": 4,
+  "to_revision": 5,
+  "diff": "--- revision 4\n+++ revision 5\n@@ -1,3 +1,3 @@\n # Foo\n-Old content\n+New content"
+}
+```
+
 ### Proposals
 
 #### `GET /proposals/:owner/:slug?document=:path&status=pending`
