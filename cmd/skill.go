@@ -1,13 +1,19 @@
 package cmd
 
 import (
+	"bytes"
+	_ "embed"
 	"fmt"
 	"os"
 	"path/filepath"
+	"text/template"
 
 	"github.com/hiasinho/specter/internal/config"
 	"github.com/spf13/cobra"
 )
+
+//go:embed skill.md
+var skillTemplate string
 
 var skillInstall bool
 
@@ -42,22 +48,17 @@ var skillCmd = &cobra.Command{
 }
 
 func generateSkillBlock(cfg *config.Config) string {
-	return fmt.Sprintf(`## Specter
+	tmpl, err := template.New("skill").Parse(skillTemplate)
+	if err != nil {
+		return fmt.Sprintf("error parsing skill template: %v", err)
+	}
 
-This project uses [Specter](https://hiasinho.github.io/specter/) to sync documents.
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, cfg); err != nil {
+		return fmt.Sprintf("error executing skill template: %v", err)
+	}
 
-- **Project:** %s
-- **Config:** .specter (YAML)
-- **Auth:** Set SPECTER_TOKEN environment variable
-
-### Workflow
-
-1. Run `+"`specter pull`"+` before starting work to get the latest documents.
-2. Edit documents in the configured paths.
-3. Run `+"`specter push`"+` after making changes to sync them.
-4. Use `+"`specter status`"+` to check for local/remote differences.
-5. Use `+"`specter diff`"+` to see line-level changes.
-`, cfg.Project)
+	return buf.String()
 }
 
 func installSkillBlock(repoRoot, block string) error {
