@@ -53,6 +53,20 @@ type Proposal struct {
 	Status         string `json:"status,omitempty"`
 }
 
+// InviteCode represents a user's invite code.
+type InviteCode struct {
+	Code     string `json:"code"`
+	Redeemed bool   `json:"redeemed"`
+}
+
+// User represents the authenticated user's profile.
+type User struct {
+	ID          string       `json:"id"`
+	Email       string       `json:"email"`
+	Username    string       `json:"username"`
+	InviteCodes []InviteCode `json:"invite_codes"`
+}
+
 // ConflictDetail describes a single document conflict from a push.
 type ConflictDetail struct {
 	Path            string `json:"path"`

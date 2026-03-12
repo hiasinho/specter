@@ -63,6 +63,15 @@ func decodeResponse[T any](resp *http.Response) (*T, error) {
 	return &result, nil
 }
 
+// Me fetches the authenticated user's profile.
+func (c *Client) Me() (*User, error) {
+	resp, err := c.do("GET", "/me", nil)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[User](resp)
+}
+
 // CreateProject creates a new project on the service.
 func (c *Client) CreateProject(slug, name string) (*Project, error) {
 	body := map[string]string{"slug": slug, "name": name}
