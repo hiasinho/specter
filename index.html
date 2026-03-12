@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specter — Sync layer for docs, built for agents and humans</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body, code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 antialiased">
+
+  <!-- Hero -->
+  <section class="min-h-[70vh] flex flex-col justify-center px-6 max-w-4xl mx-auto">
+    <p class="text-sm text-emerald-400 tracking-wider uppercase mb-4">Work in Progress</p>
+    <h1 class="text-5xl sm:text-6xl font-bold tracking-tight mb-6">
+      Specter
+    </h1>
+    <p class="text-xl sm:text-2xl text-zinc-300 max-w-2xl leading-relaxed">
+      A sync layer for your team's documents, built for AI agents and humans alike.
+    </p>
+    <p class="mt-6 text-zinc-400 max-w-2xl leading-relaxed">
+      Keep specs, docs, and decisions in sync across repos and teams. Push from your repo, collaborate through agents or the API.
+    </p>
+  </section>
+
+  <!-- How It Works -->
+  <section class="px-6 py-24 max-w-4xl mx-auto">
+    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">How it works</h2>
+    <div class="grid sm:grid-cols-3 gap-8">
+      <div>
+        <div class="text-3xl font-bold text-zinc-600 mb-3">01</div>
+        <h3 class="text-lg font-semibold mb-2">Configure</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          Drop a <code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">.specter</code> file in your repo to define which folders to sync.
+        </p>
+        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>project: my-project
+paths:
+  - specs/
+  - docs/architecture/</code></pre>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-zinc-600 mb-3">02</div>
+        <h3 class="text-lg font-semibold mb-2">Push</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          Your documents land on Specter, versioned by branch. The CLI auto-detects your git branch.
+        </p>
+        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>$ specter push
+Pushing 12 documents to main...
+✓ Synced in 340ms</code></pre>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-zinc-600 mb-3">03</div>
+        <h3 class="text-lg font-semibold mb-2">Collaborate</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">
+          Teammates and AI agents read, review, and propose changes through the API.
+        </p>
+        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>POST /projects/my-project/proposals
+{
+  "document": "specs/auth.md",
+  "type": "replace",
+  "body": "..."
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="px-6 py-24 max-w-4xl mx-auto border-t border-zinc-800">
+    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">What it does</h2>
+    <div class="grid sm:grid-cols-2 gap-x-12 gap-y-8">
+      <div>
+        <h3 class="font-semibold mb-1">Document sync</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Push markdown from any repo, pull updates back. Content hashing and revisions keep everything in order.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-1">Branch-aware</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Documents follow your git branches, with automatic fallback to main when a branch doesn't exist on the service.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-1">Proposals</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Structured feedback — replace, insert, delete, or annotate. Anchored to content, not line numbers.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-1">Agent-friendly API</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">RESTful, token-based, designed for LLM agents to read documents and submit proposals programmatically.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-1">Role-based access</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Owner, editor, reviewer, reader. Invite collaborators with scoped permissions via shareable invite codes.</p>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-1">No infrastructure</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Runs on Supabase. No servers to manage, no deploy pipelines. Push your docs and go.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Status -->
+  <section class="px-6 py-24 max-w-4xl mx-auto border-t border-zinc-800">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-8">
+      <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-4">Status</h2>
+      <p class="text-zinc-300 leading-relaxed">
+        Specter is under active development. The API and core sync are functional, but things will change.
+      </p>
+      <a href="https://github.com/hiasinho/specter" class="inline-block mt-4 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">View on GitHub →</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="px-6 py-12 max-w-4xl mx-auto border-t border-zinc-800">
+    <p class="text-zinc-600 text-sm">Specter</p>
+  </footer>
+
+</body>
+</html>
