@@ -51,10 +51,10 @@
   <span class="text-emerald-400">specter pull</span>               │   ├─ insert       │
   <span class="text-emerald-400">specter status</span>             │   ├─ delete       │            <span class="text-zinc-500">roles:</span>
   <span class="text-emerald-400">specter diff</span>               │   └─ annotate     │            owner / editor
-  <span class="text-emerald-400">specter proposals</span>          │                   │            reviewer / reader
-                            │   Access Control  │
-                            │   └─ invite codes │
-                            └───────────────────┘</code></pre>
+  <span class="text-emerald-400">specter history</span>            │                   │            reviewer / reader
+  <span class="text-emerald-400">specter proposals</span>          │   Access Control  │
+  <span class="text-emerald-400">specter invite</span>             │   └─ invite codes │
+  <span class="text-emerald-400">specter register</span>           └───────────────────┘</code></pre>
     </div>
 
     <!-- Three steps -->
@@ -79,13 +79,15 @@ exclude:
           The CLI detects your git branch, hashes content for conflict detection, and syncs only what changed.
         </p>
         <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>$ specter push
-Pushing 12 docs to main...
-  3 created, 2 updated, 7 unchanged
-✓ Synced in 340ms
+Pushed to acme/api-specs/main:
+  created: 3
+  updated: 2
+  unchanged: 7
 
-$ specter status
-  M specs/auth.md (local changes)
-  ↓ specs/api.md  (remote update)</code></pre>
+$ specter history specs/auth.md
+  r5  2026-03-12T10:00:00Z  alice
+  r4  2026-03-11T14:30:00Z  bob
+  r3  2026-03-10T09:15:00Z  alice</code></pre>
       </div>
       <div>
         <div class="text-3xl font-bold text-zinc-600 mb-3">03</div>
@@ -136,6 +138,50 @@ POST /proposals/acme/api-specs
       <div>
         <h3 class="font-semibold mb-1">Zero infrastructure</h3>
         <p class="text-zinc-400 text-sm leading-relaxed">Single binary CLI, hosted service. No servers, no deploy pipelines, no config beyond one YAML file.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Full CLI -->
+  <section class="px-6 py-24 max-w-4xl mx-auto border-t border-zinc-800">
+    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">The CLI</h2>
+    <div class="grid sm:grid-cols-2 gap-x-12 gap-y-6 text-sm">
+      <div>
+        <h3 class="font-semibold text-zinc-200 mb-3">Sync</h3>
+        <div class="space-y-2 text-zinc-400">
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter push</code> — push local docs to the service</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter pull</code> — pull remote changes to local</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter status</code> — show what's changed locally or remotely</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter diff</code> — show differences between local and remote</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-zinc-200 mb-3">History</h3>
+        <div class="space-y-2 text-zinc-400">
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter history &lt;path&gt;</code> — list revision history</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter history &lt;path&gt; &lt;rev&gt;</code> — show a specific revision</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter history diff &lt;path&gt;</code> — compare two revisions</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-zinc-200 mb-3">Collaboration</h3>
+        <div class="space-y-2 text-zinc-400">
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter propose</code> — create a proposal for a document</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter proposals</code> — list proposals for the project</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter review</code> — accept or reject a proposal</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter invite create</code> — create an invite for a role</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter invite redeem</code> — redeem an invite code</p>
+        </div>
+      </div>
+      <div>
+        <h3 class="font-semibold text-zinc-200 mb-3">Account & Projects</h3>
+        <div class="space-y-2 text-zinc-400">
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter register</code> — create a new account</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter me</code> — show current user info</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter projects</code> — list your projects</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter init</code> — create a project on the service</p>
+          <p><code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">specter project delete</code> — delete a project</p>
+        </div>
       </div>
     </div>
   </section>
