@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specter — Your specs, everywhere.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'specter-bg': '#070921',
+            'specter-pink': '#ff7698',
+            'specter-hot': '#ff167a',
+            'specter-blue': '#3b82f6',
+            'specter-purple': '#8b5cf6',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: #070921;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Animated hero gradient orbs */
+    .hero-orb-1 {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 22, 122, 0.18) 0%, rgba(255, 118, 152, 0.08) 40%, transparent 70%);
+      filter: blur(40px);
+      animation: orb-drift-1 12s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .hero-orb-2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 50%, transparent 70%);
+      filter: blur(60px);
+      animation: orb-drift-2 16s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .hero-orb-3 {
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 118, 152, 0.10) 0%, transparent 70%);
+      filter: blur(50px);
+      animation: orb-drift-3 10s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes orb-drift-1 {
+      0% { transform: translate(-80px, -40px) scale(1); }
+      100% { transform: translate(40px, 60px) scale(1.1); }
+    }
+
+    @keyframes orb-drift-2 {
+      0% { transform: translate(60px, 30px) scale(1.05); }
+      100% { transform: translate(-40px, -60px) scale(0.95); }
+    }
+
+    @keyframes orb-drift-3 {
+      0% { transform: translate(0px, -30px) scale(1); }
+      100% { transform: translate(30px, 30px) scale(1.08); }
+    }
+
+    /* Glass card base */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .glass-card-pink {
+      background: rgba(255, 22, 122, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 118, 152, 0.15);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 32px rgba(255, 22, 122, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.4),
+        0 0 80px rgba(255, 22, 122, 0.06);
+    }
+
+    .glass-card-purple {
+      background: rgba(139, 92, 246, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(139, 92, 246, 0.20);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 32px rgba(139, 92, 246, 0.15),
+        0 2px 8px rgba(0, 0, 0, 0.4),
+        0 0 60px rgba(139, 92, 246, 0.06);
+    }
+
+    .glass-card-blue {
+      background: rgba(59, 130, 246, 0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 130, 246, 0.20);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 32px rgba(59, 130, 246, 0.12),
+        0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Terminal glass */
+    .terminal-glass {
+      background: rgba(7, 9, 33, 0.72);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 8px 48px rgba(0, 0, 0, 0.6),
+        0 2px 8px rgba(0, 0, 0, 0.5),
+        0 0 120px rgba(255, 22, 122, 0.08);
+    }
+
+    /* Stat strip card */
+    .stat-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 2px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Terminal cursor blink */
+    .cursor-blink {
+      display: inline-block;
+      width: 8px;
+      height: 15px;
+      background: #ff7698;
+      animation: blink 1.2s step-end infinite;
+      vertical-align: text-bottom;
+      border-radius: 1px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Gradient text */
+    .text-gradient-pink {
+      background: linear-gradient(135deg, #ff7698 0%, #ff167a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .text-gradient-cool {
+      background: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Pink glow line */
+    .glow-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, #ff167a 30%, #ff7698 60%, transparent 100%);
+      box-shadow: 0 0 12px rgba(255, 22, 122, 0.5);
+    }
+
+    /* Feature icon container */
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Hover lift */
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hover-lift:hover {
+      transform: translateY(-3px);
+    }
+
+    /* Section fade-in */
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-up {
+      animation: fade-up 0.7s ease forwards;
+    }
+
+    .fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .fade-up-delay-3 { animation-delay: 0.35s; opacity: 0; }
+    .fade-up-delay-4 { animation-delay: 0.5s; opacity: 0; }
+
+    /* Nav blur */
+    .nav-glass {
+      background: rgba(7, 9, 33, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Command pill */
+    .cmd-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .cmd-pill:hover {
+      background: rgba(255, 118, 152, 0.08);
+      border-color: rgba(255, 118, 152, 0.25);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+
+    /* Noise overlay for depth */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.4;
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+
+  <!-- Navigation -->
+  <nav class="nav-glass fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center" style="background: linear-gradient(135deg, #ff167a, #ff7698); box-shadow: 0 0 16px rgba(255,22,122,0.4);">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 7L7 2L12 7L7 12L2 7Z" fill="white" fill-opacity="0.9"/>
+          </svg>
+        </div>
+        <span class="font-semibold text-sm tracking-tight">Specter</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#features" class="text-xs font-medium" style="color: rgba(255,255,255,0.5);">Features</a>
+        <a href="#commands" class="text-xs font-medium" style="color: rgba(255,255,255,0.5);">CLI</a>
+        <a href="https://github.com" class="text-xs font-medium" style="color: rgba(255,255,255,0.5);">GitHub</a>
+        <a href="#" class="text-xs font-semibold px-4 py-1.5 rounded-full" style="background: rgba(255,22,122,0.15); border: 1px solid rgba(255,118,152,0.3); color: #ff7698;">Get started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="relative min-h-screen flex items-center overflow-hidden pt-14">
+
+    <!-- Background orbs -->
+    <div class="hero-orb-1" style="top: -100px; left: -200px;"></div>
+    <div class="hero-orb-2" style="top: 200px; right: -100px;"></div>
+    <div class="hero-orb-3" style="bottom: 0px; left: 30%;"></div>
+
+    <!-- Subtle grid -->
+    <div class="absolute inset-0" style="background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);"></div>
+
+    <div class="max-w-6xl mx-auto px-6 w-full py-24 relative z-10">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+        <!-- Left: Text -->
+        <div>
+          <div class="inline-flex items-center gap-2 mb-8 fade-up fade-up-delay-1">
+            <div class="px-3 py-1 rounded-full text-xs font-medium" style="background: rgba(255,118,152,0.12); border: 1px solid rgba(255,118,152,0.25); color: #ff7698;">
+              v1.0 — Available now
+            </div>
+          </div>
+
+          <h1 class="fade-up fade-up-delay-2" style="font-size: clamp(2.8rem, 5vw, 4.2rem); font-weight: 800; line-height: 1.08; letter-spacing: -0.03em; margin-bottom: 1.5rem;">
+            Your specs,<br />
+            <span class="text-gradient-pink">everywhere.</span>
+          </h1>
+
+          <p class="fade-up fade-up-delay-3 mb-10 leading-relaxed" style="font-size: 1.1rem; color: rgba(255,255,255,0.55); max-width: 400px;">
+            A sync layer for your team's documents. Built for AI agents and humans. Push. Pull. Propose. Never lose a spec again.
+          </p>
+
+          <div class="fade-up fade-up-delay-4 flex items-center gap-4 flex-wrap">
+            <div class="terminal-glass rounded-xl px-5 py-3 flex items-center gap-3">
+              <span style="color: rgba(255,255,255,0.3); font-family: monospace; font-size: 14px;">$</span>
+              <span style="font-family: monospace; font-size: 14px; color: rgba(255,255,255,0.9);">specter init &amp;&amp; specter push</span>
+            </div>
+            <a href="#" class="flex items-center gap-2 text-sm font-medium" style="color: rgba(255,255,255,0.5);">
+              Read the docs
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Right: Terminal mockup -->
+        <div class="relative fade-up fade-up-delay-3">
+          <!-- Glow behind terminal -->
+          <div class="absolute inset-0 rounded-2xl" style="background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(255,22,122,0.12) 0%, transparent 70%); filter: blur(20px); transform: scale(1.1);"></div>
+
+          <div class="terminal-glass rounded-2xl overflow-hidden relative">
+            <!-- Terminal header -->
+            <div class="flex items-center gap-2 px-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+              <div class="w-3 h-3 rounded-full" style="background: #ff5f57;"></div>
+              <div class="w-3 h-3 rounded-full" style="background: #febc2e;"></div>
+              <div class="w-3 h-3 rounded-full" style="background: #28c840;"></div>
+              <span class="ml-3 text-xs" style="color: rgba(255,255,255,0.25); font-family: monospace;">~/projects/acme</span>
+            </div>
+
+            <!-- Terminal content -->
+            <div class="p-5" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 1.8;">
+              <div style="color: rgba(255,255,255,0.35);"># push local docs to remote</div>
+              <div class="mt-1">
+                <span style="color: #ff7698;">$</span>
+                <span style="color: rgba(255,255,255,0.85); margin-left: 8px;">specter push</span>
+              </div>
+
+              <div class="mt-3" style="color: rgba(255,255,255,0.45);">Collecting documents...</div>
+              <div style="color: rgba(255,255,255,0.45);">Branch: <span style="color: #a78bfa;">main</span></div>
+
+              <div class="mt-2">
+                <span style="color: #28c840;">✓</span>
+                <span style="color: rgba(255,255,255,0.7); margin-left: 6px;">docs/architecture.md</span>
+                <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">synced</span>
+              </div>
+              <div>
+                <span style="color: #28c840;">✓</span>
+                <span style="color: rgba(255,255,255,0.7); margin-left: 6px;">docs/api-spec.md</span>
+                <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">synced</span>
+              </div>
+              <div>
+                <span style="color: #febc2e;">~</span>
+                <span style="color: rgba(255,255,255,0.7); margin-left: 6px;">docs/roadmap.md</span>
+                <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">updated</span>
+              </div>
+              <div>
+                <span style="color: #28c840;">✓</span>
+                <span style="color: rgba(255,255,255,0.7); margin-left: 6px;">docs/onboarding.md</span>
+                <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">synced</span>
+              </div>
+
+              <div class="mt-3" style="color: rgba(255,255,255,0.3);">────────────────────────</div>
+              <div class="mt-1">
+                <span style="color: #ff7698; font-weight: 600;">4 documents</span>
+                <span style="color: rgba(255,255,255,0.45);"> pushed · revision </span>
+                <span style="color: #a78bfa;">r42</span>
+                <span style="color: rgba(255,255,255,0.45);"> · 0 conflicts</span>
+              </div>
+
+              <div class="mt-3">
+                <span style="color: #ff7698;">$</span>
+                <span class="cursor-blink ml-2"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom gradient fade -->
+    <div class="absolute bottom-0 left-0 right-0 h-32" style="background: linear-gradient(to bottom, transparent, #070921);"></div>
+  </section>
+
+  <!-- Stat strip -->
+  <section class="relative py-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="glow-line mb-12 opacity-40"></div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div class="stat-card rounded-2xl p-6 hover-lift">
+          <div class="text-2xl font-bold mb-1 text-gradient-pink">Synced.</div>
+          <div class="text-sm leading-snug" style="color: rgba(255,255,255,0.45);">Push and pull docs across machines and teammates. One command.</div>
+        </div>
+
+        <div class="stat-card rounded-2xl p-6 hover-lift">
+          <div class="text-2xl font-bold mb-1 text-gradient-cool">Versioned.</div>
+          <div class="text-sm leading-snug" style="color: rgba(255,255,255,0.45);">Full revision history. Diff any two points in time. Roll back in seconds.</div>
+        </div>
+
+        <div class="stat-card rounded-2xl p-6 hover-lift">
+          <div class="text-2xl font-bold mb-1" style="background: linear-gradient(135deg, #34d399, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Reviewed.</div>
+          <div class="text-sm leading-snug" style="color: rgba(255,255,255,0.45);">Propose changes. Request review. Merge when ready. Like PRs, for docs.</div>
+        </div>
+
+        <div class="stat-card rounded-2xl p-6 hover-lift">
+          <div class="text-2xl font-bold mb-1" style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Agentless.</div>
+          <div class="text-sm leading-snug" style="color: rgba(255,255,255,0.45);">AI agents read and write docs just like humans. No special SDK needed.</div>
+        </div>
+
+      </div>
+
+      <div class="glow-line mt-12 opacity-40"></div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="relative py-24">
+
+    <!-- Section orb -->
+    <div class="absolute" style="width: 600px; height: 600px; top: 50%; left: 50%; transform: translate(-50%, -50%); background: radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 70%); filter: blur(60px); pointer-events: none;"></div>
+
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+
+      <div class="mb-16">
+        <div class="text-xs font-semibold mb-4 tracking-widest uppercase" style="color: #ff7698;">Features</div>
+        <h2 class="text-4xl font-bold tracking-tight mb-4" style="letter-spacing: -0.02em;">Everything your docs need.<br /><span style="color: rgba(255,255,255,0.4);">Nothing they don't.</span></h2>
+      </div>
+
+      <!-- Feature grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        <!-- Push / Pull -->
+        <div class="glass-card-pink rounded-2xl p-7 hover-lift">
+          <div class="feature-icon mb-5" style="background: rgba(255,22,122,0.15); border: 1px solid rgba(255,118,152,0.25);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 3V13M10 3L6.5 6.5M10 3L13.5 6.5M4 17H16" stroke="#ff7698" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="font-semibold text-lg mb-2">Push &amp; Pull.</div>
+          <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
+            Sync your markdown documents with a single command. Specter handles conflict detection via SHA256 hashing — only diffs travel over the wire.
+          </p>
+          <div class="mt-5 flex gap-2">
+            <span class="cmd-pill">specter push</span>
+            <span class="cmd-pill">specter pull</span>
+          </div>
+        </div>
+
+        <!-- Proposals -->
+        <div class="glass-card-purple rounded-2xl p-7 hover-lift">
+          <div class="feature-icon mb-5" style="background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.25);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M3 5H17M3 10H12M3 15H9" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="15.5" cy="14.5" r="3" stroke="#a78bfa" stroke-width="1.5"/>
+              <path d="M14.5 14.5H16.5M15.5 13.5V15.5" stroke="#a78bfa" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="font-semibold text-lg mb-2">Proposals.</div>
+          <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
+            Propose changes without overwriting. Teammates review diffs inline, approve or reject. It's a pull request — for your living docs.
+          </p>
+          <div class="mt-5 flex gap-2 flex-wrap">
+            <span class="cmd-pill">specter propose</span>
+            <span class="cmd-pill">specter review</span>
+          </div>
+        </div>
+
+        <!-- Conflict Detection -->
+        <div class="glass-card-blue rounded-2xl p-7 hover-lift">
+          <div class="feature-icon mb-5" style="background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.25);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M10 2L18 16H2L10 2Z" stroke="#60a5fa" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M10 8V11" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="10" cy="13.5" r="0.8" fill="#60a5fa"/>
+            </svg>
+          </div>
+          <div class="font-semibold text-lg mb-2">Conflict Detection.</div>
+          <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
+            Every push is compared against the last known revision. If someone else pushed first, Specter catches it — before you overwrite their work.
+          </p>
+          <div class="mt-5 flex gap-2">
+            <span class="cmd-pill">specter status</span>
+            <span class="cmd-pill">specter diff</span>
+          </div>
+        </div>
+
+        <!-- Branch-aware -->
+        <div class="glass-card rounded-2xl p-7 hover-lift">
+          <div class="feature-icon mb-5" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <circle cx="6" cy="5" r="2" stroke="rgba(255,255,255,0.7)" stroke-width="1.6"/>
+              <circle cx="6" cy="15" r="2" stroke="rgba(255,255,255,0.7)" stroke-width="1.6"/>
+              <circle cx="14" cy="9" r="2" stroke="rgba(255,255,255,0.7)" stroke-width="1.6"/>
+              <path d="M6 7V13" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M6 7C6 7 8 7 10 8C12 9 12 9 14 9" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="font-semibold text-lg mb-2">Branch-Aware.</div>
+          <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
+            Specter reads your current git branch and namespaces your documents automatically. Work on <code class="text-xs px-1.5 py-0.5 rounded" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);">feature/new-api</code> without touching <code class="text-xs px-1.5 py-0.5 rounded" style="background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7);">main</code>.
+          </p>
+          <div class="mt-5 flex gap-2 flex-wrap">
+            <span class="cmd-pill">specter history</span>
+            <span class="cmd-pill">specter invite</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Section -->
+  <section id="commands" class="relative py-24">
+
+    <div class="absolute" style="width: 800px; height: 400px; top: 0; left: -200px; background: radial-gradient(ellipse, rgba(255,22,122,0.05) 0%, transparent 70%); pointer-events: none;"></div>
+
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+
+        <!-- Left: Description -->
+        <div>
+          <div class="text-xs font-semibold mb-4 tracking-widest uppercase" style="color: #ff7698;">CLI Reference</div>
+          <h2 class="text-4xl font-bold tracking-tight mb-6" style="letter-spacing: -0.02em;">
+            One binary.<br />
+            <span style="color: rgba(255,255,255,0.4);">All you need.</span>
+          </h2>
+          <p class="text-sm leading-relaxed mb-8" style="color: rgba(255,255,255,0.5);">
+            Specter is a single static binary. Drop it in your PATH, set <code class="px-1.5 py-0.5 rounded text-xs" style="background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7);">SPECTER_TOKEN</code>, and you're running. No daemon, no background service.
+          </p>
+
+          <!-- Command list -->
+          <div class="space-y-2">
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #ff7698;">push</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Upload local docs to remote, update revision</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #ff7698;">pull</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Download latest remote docs to local filesystem</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #a78bfa;">status</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Show sync state and detect local vs remote drift</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #a78bfa;">diff</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Show line-by-line diff against remote revision</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #60a5fa;">propose</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Create a change proposal for review</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: #60a5fa;">review</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Accept or reject pending proposals</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: rgba(255,255,255,0.5);">history</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">List document revisions, view or diff any two</span>
+            </div>
+            <div class="flex items-start gap-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: rgba(255,255,255,0.5);">invite</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Add team members to your project</span>
+            </div>
+            <div class="flex items-start gap-4 py-3">
+              <code class="text-sm font-medium shrink-0 w-28" style="color: rgba(255,255,255,0.5);">init</code>
+              <span class="text-sm" style="color: rgba(255,255,255,0.5);">Scaffold <code style="font-size: 12px;">.specter</code> config in current repo</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Terminal showing history + diff -->
+        <div class="relative">
+          <div class="absolute inset-0 rounded-2xl" style="background: radial-gradient(ellipse 70% 50% at 50% 50%, rgba(139,92,246,0.10) 0%, transparent 70%); filter: blur(20px); transform: scale(1.05);"></div>
+
+          <div class="terminal-glass rounded-2xl overflow-hidden relative">
+            <div class="flex items-center gap-2 px-4 py-3" style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+              <div class="w-3 h-3 rounded-full" style="background: #ff5f57;"></div>
+              <div class="w-3 h-3 rounded-full" style="background: #febc2e;"></div>
+              <div class="w-3 h-3 rounded-full" style="background: #28c840;"></div>
+              <span class="ml-3 text-xs" style="color: rgba(255,255,255,0.25); font-family: monospace;">~/projects/acme</span>
+            </div>
+
+            <div class="p-5" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12.5px; line-height: 1.85;">
+
+              <div>
+                <span style="color: #ff7698;">$</span>
+                <span style="color: rgba(255,255,255,0.85); margin-left: 8px;">specter status</span>
+              </div>
+              <div class="mt-1" style="color: rgba(255,255,255,0.4);">Project: <span style="color: rgba(255,255,255,0.65);">acme/backend-docs</span></div>
+              <div style="color: rgba(255,255,255,0.4);">Remote revision: <span style="color: #a78bfa;">r47</span>  Local: <span style="color: #febc2e;">r44</span>  <span style="color: #febc2e;">⚠ behind</span></div>
+
+              <div class="mt-4">
+                <span style="color: #ff7698;">$</span>
+                <span style="color: rgba(255,255,255,0.85); margin-left: 8px;">specter diff docs/api-spec.md</span>
+              </div>
+              <div class="mt-2" style="color: rgba(255,255,255,0.3);">--- r44  docs/api-spec.md</div>
+              <div style="color: rgba(255,255,255,0.3);">+++ r47  docs/api-spec.md</div>
+              <div class="mt-1" style="color: rgba(255,255,255,0.3);">@@ -12,7 +12,9 @@</div>
+              <div style="color: rgba(255, 80, 80, 0.85);"> - Rate limit: 60 req/min</div>
+              <div style="color: rgba(80, 220, 120, 0.9);">+Rate limit: 120 req/min</div>
+              <div style="color: rgba(80, 220, 120, 0.9);">+Burst: 20 requests</div>
+              <div style="color: rgba(255,255,255,0.35);"> &nbsp;Auth: Bearer token</div>
+
+              <div class="mt-4">
+                <span style="color: #ff7698;">$</span>
+                <span style="color: rgba(255,255,255,0.85); margin-left: 8px;">specter pull</span>
+              </div>
+              <div class="mt-1">
+                <span style="color: #28c840;">✓</span>
+                <span style="color: rgba(255,255,255,0.65); margin-left: 6px;">Pulled r47 · 3 docs updated</span>
+              </div>
+
+              <div class="mt-3">
+                <span style="color: #ff7698;">$</span>
+                <span class="cursor-blink ml-2"></span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Config snippet -->
+  <section class="relative py-20">
+    <div class="max-w-6xl mx-auto px-6">
+
+      <div class="glass-card rounded-2xl p-8 md:p-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+
+          <div>
+            <div class="text-xs font-semibold mb-4 tracking-widest uppercase" style="color: #ff7698;">Config</div>
+            <h3 class="text-3xl font-bold tracking-tight mb-4" style="letter-spacing: -0.02em;">Zero boilerplate.</h3>
+            <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
+              Drop a <code class="px-1.5 py-0.5 rounded text-xs" style="background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7);">.specter</code> file at your repo root. Point it at your docs directories. That's it. Branch namespacing and conflict tracking are automatic.
+            </p>
+            <div class="mt-6 flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full" style="background: #28c840; box-shadow: 0 0 8px rgba(40,200,64,0.6);"></div>
+              <span class="text-xs" style="color: rgba(255,255,255,0.4);">Auth via <code style="color: rgba(255,255,255,0.6);">SPECTER_TOKEN</code> env var</span>
+            </div>
+            <div class="mt-2 flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full" style="background: #28c840; box-shadow: 0 0 8px rgba(40,200,64,0.6);"></div>
+              <span class="text-xs" style="color: rgba(255,255,255,0.4);">Git branch auto-detected</span>
+            </div>
+            <div class="mt-2 flex items-center gap-3">
+              <div class="w-2 h-2 rounded-full" style="background: #28c840; box-shadow: 0 0 8px rgba(40,200,64,0.6);"></div>
+              <span class="text-xs" style="color: rgba(255,255,255,0.4);"><code style="color: rgba(255,255,255,0.6);">.specter-sync</code> gitignored automatically</span>
+            </div>
+          </div>
+
+          <div class="terminal-glass rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-2.5" style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+              <span class="text-xs" style="color: rgba(255,255,255,0.25); font-family: monospace;">.specter</span>
+            </div>
+            <div class="p-5" style="font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; line-height: 2;">
+              <div><span style="color: #60a5fa;">project</span><span style="color: rgba(255,255,255,0.4);">:</span> <span style="color: #34d399;">acme/backend-docs</span></div>
+              <div class="mt-1"><span style="color: #60a5fa;">paths</span><span style="color: rgba(255,255,255,0.4);">:</span></div>
+              <div style="padding-left: 20px;"><span style="color: rgba(255,255,255,0.4);">-</span> <span style="color: #fbbf24;">docs/</span></div>
+              <div style="padding-left: 20px;"><span style="color: rgba(255,255,255,0.4);">-</span> <span style="color: #fbbf24;">specs/</span></div>
+              <div class="mt-1"><span style="color: #60a5fa;">exclude</span><span style="color: rgba(255,255,255,0.4);">:</span></div>
+              <div style="padding-left: 20px;"><span style="color: rgba(255,255,255,0.4);">-</span> <span style="color: rgba(255,255,255,0.5);">**/drafts/**</span></div>
+              <div style="padding-left: 20px;"><span style="color: rgba(255,255,255,0.4);">-</span> <span style="color: rgba(255,255,255,0.5);">**/*.tmp.md</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="relative py-32 overflow-hidden">
+
+    <div class="absolute inset-0 flex items-center justify-center" style="pointer-events: none;">
+      <div style="width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(circle, rgba(255,22,122,0.12) 0%, rgba(255,118,152,0.05) 30%, transparent 70%); filter: blur(60px);"></div>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-6 text-center relative z-10">
+      <h2 class="text-5xl font-bold tracking-tight mb-6" style="letter-spacing: -0.03em; line-height: 1.1;">
+        Your docs deserve<br />
+        <span class="text-gradient-pink">better infrastructure.</span>
+      </h2>
+      <p class="text-lg mb-10" style="color: rgba(255,255,255,0.45);">
+        Specter is open source. Start syncing in under a minute.
+      </p>
+
+      <div class="flex items-center justify-center gap-4 flex-wrap">
+        <a href="#" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm" style="background: linear-gradient(135deg, #ff167a, #ff7698); box-shadow: 0 4px 32px rgba(255,22,122,0.35), 0 1px 0 rgba(255,255,255,0.2) inset; color: white;">
+          Get started free
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="https://github.com" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.75); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+      </div>
+
+      <div class="mt-8 terminal-glass rounded-xl px-6 py-3 inline-flex items-center gap-3">
+        <span style="color: rgba(255,255,255,0.3); font-family: monospace; font-size: 13px;">$</span>
+        <span style="font-family: monospace; font-size: 13px; color: rgba(255,255,255,0.8);">go install github.com/hiasinho/specter@latest</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative py-12" style="border-top: 1px solid rgba(255,255,255,0.05);">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded-md flex items-center justify-center" style="background: linear-gradient(135deg, #ff167a, #ff7698);">
+            <svg width="11" height="11" viewBox="0 0 14 14" fill="none">
+              <path d="M2 7L7 2L12 7L7 12L2 7Z" fill="white" fill-opacity="0.9"/>
+            </svg>
+          </div>
+          <span class="text-sm font-semibold">Specter</span>
+          <span class="text-xs ml-2" style="color: rgba(255,255,255,0.25);">A sync layer for your team's documents.</span>
+        </div>
+
+        <div class="flex items-center gap-6">
+          <a href="#" class="text-xs" style="color: rgba(255,255,255,0.3);">GitHub</a>
+          <a href="#" class="text-xs" style="color: rgba(255,255,255,0.3);">Docs</a>
+          <a href="#" class="text-xs" style="color: rgba(255,255,255,0.3);">API</a>
+          <span class="text-xs" style="color: rgba(255,255,255,0.15);">Built with Go · Backed by Supabase</span>
+        </div>
+
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

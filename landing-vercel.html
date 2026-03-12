@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specter — Sync your specs to the cloud.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            'true-black': '#000000',
+          },
+          letterSpacing: {
+            'tight-hero': '-0.04em',
+            'tight-h2': '-0.03em',
+            'tight-h3': '-0.02em',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Hero glow — radial spotlight bleeding from above, behind the headline */
+    .hero-glow {
+      position: absolute;
+      top: -120px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 600px;
+      background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.04) 40%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-glow-inner {
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 480px;
+      height: 320px;
+      background: radial-gradient(ellipse at 50% 20%, rgba(255,255,255,0.08) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    /* Text glow on the headline itself */
+    .headline-glow {
+      text-shadow:
+        0 0 80px rgba(255,255,255,0.18),
+        0 0 200px rgba(255,255,255,0.08);
+    }
+
+    /* Borders */
+    .border-subtle { border-color: rgba(255,255,255,0.08); }
+    .border-subtle-strong { border-color: rgba(255,255,255,0.12); }
+
+    /* Card backgrounds */
+    .card-bg { background: rgba(255,255,255,0.03); }
+    .card-bg-hover:hover { background: rgba(255,255,255,0.05); }
+
+    /* Code block */
+    .code-block {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .code-block-header {
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: rgba(255,95,86,0.6); }
+    .dot-yellow { background: rgba(255,189,46,0.6); }
+    .dot-green { background: rgba(39,201,63,0.6); }
+
+    code, pre {
+      font-family: 'Berkeley Mono', 'Fira Code', 'JetBrains Mono', 'Menlo', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .token-comment { color: #555555; }
+    .token-cmd { color: #ffffff; }
+    .token-created { color: #4ade80; }
+    .token-updated { color: #60a5fa; }
+    .token-unchanged { color: #888888; }
+    .token-error { color: #f87171; }
+    .token-key { color: #888888; }
+    .token-val { color: #e2e8f0; }
+    .token-string { color: #a5b4fc; }
+    .token-prompt { color: #555555; }
+    .token-output { color: #888888; }
+
+    /* Metric strip */
+    .metric-strip {
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Primary CTA — white fill */
+    .btn-primary {
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      font-size: 14px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: 1px solid #ffffff;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+    .btn-primary:hover { background: rgba(255,255,255,0.90); transform: translateY(-1px); }
+
+    /* Secondary CTA — ghost */
+    .btn-ghost {
+      background: transparent;
+      color: #ffffff;
+      font-weight: 500;
+      font-size: 14px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.18);
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.01em;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.40); background: rgba(255,255,255,0.04); transform: translateY(-1px); }
+
+    /* New badge */
+    .badge-new {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.75);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    /* Divider */
+    hr.section-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Feature row transition */
+    .feature-row {
+      transition: border-color 0.2s ease;
+    }
+    .feature-row:hover {
+      border-color: rgba(255,255,255,0.12) !important;
+    }
+
+    /* Nav */
+    .nav-blur {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: rgba(0,0,0,0.7);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* Command inline */
+    .cmd-inline {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-family: 'Berkeley Mono', 'Fira Code', 'Menlo', monospace;
+      color: rgba(255,255,255,0.85);
+    }
+
+    /* Quickstart step number */
+    .step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav-blur sticky top-0 z-50">
+  <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-8">
+      <a href="#" class="text-white font-semibold text-sm tracking-tight">Specter</a>
+      <div class="hidden md:flex items-center gap-6">
+        <a href="#features" class="text-sm text-gray-500 hover:text-white transition-colors duration-150">Features</a>
+        <a href="#quickstart" class="text-sm text-gray-500 hover:text-white transition-colors duration-150">Quickstart</a>
+        <a href="#api" class="text-sm text-gray-500 hover:text-white transition-colors duration-150">API</a>
+        <a href="https://github.com/hiasinho/specter" class="text-sm text-gray-500 hover:text-white transition-colors duration-150">GitHub</a>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <a href="#quickstart" class="btn-ghost" style="padding: 7px 16px; font-size: 13px;">Docs</a>
+      <a href="#quickstart" class="btn-primary" style="padding: 7px 16px; font-size: 13px;">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section style="padding: 120px 0 100px; position: relative; overflow: hidden;">
+  <div class="hero-glow"></div>
+  <div class="hero-glow-inner"></div>
+
+  <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 mb-8">
+      <span class="badge-new">New</span>
+      <span class="text-sm text-gray-500">Branch-namespaced sync is now live</span>
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-gray-600"><path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+
+    <h1 class="headline-glow text-white font-semibold mb-6" style="font-size: clamp(40px, 7vw, 72px); letter-spacing: -0.04em; line-height: 1.05;">
+      Sync your specs<br />to the cloud.
+    </h1>
+
+    <p class="text-gray-400 mb-10 mx-auto" style="font-size: 18px; line-height: 1.6; max-width: 520px; letter-spacing: -0.01em;">
+      A document sync layer for teams and AI agents. Push, pull, and propose changes to markdown documents — with conflict detection built in.
+    </p>
+
+    <div class="flex items-center justify-center gap-4 flex-wrap">
+      <a href="#quickstart" class="btn-primary">
+        Get started free
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#features" class="btn-ghost">
+        See how it works
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- METRIC STRIP -->
+<section class="metric-strip" style="padding: 0;">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="grid grid-cols-2 md:grid-cols-4" style="border-left: 1px solid rgba(255,255,255,0.06);">
+
+      <div style="padding: 36px 32px; border-right: 1px solid rgba(255,255,255,0.06);">
+        <div class="text-white font-semibold mb-1" style="font-size: 28px; letter-spacing: -0.03em;">100%</div>
+        <div class="text-gray-500 text-sm">Conflict detection<br />on every push</div>
+      </div>
+
+      <div style="padding: 36px 32px; border-right: 1px solid rgba(255,255,255,0.06);">
+        <div class="text-white font-semibold mb-1" style="font-size: 28px; letter-spacing: -0.03em;">SHA-256</div>
+        <div class="text-gray-500 text-sm">Content hashing<br />per document</div>
+      </div>
+
+      <div style="padding: 36px 32px; border-right: 1px solid rgba(255,255,255,0.06);">
+        <div class="text-white font-semibold mb-1" style="font-size: 28px; letter-spacing: -0.03em;">20</div>
+        <div class="text-gray-500 text-sm">Revisions retained<br />per document</div>
+      </div>
+
+      <div style="padding: 36px 32px;">
+        <div class="text-white font-semibold mb-1" style="font-size: 28px; letter-spacing: -0.03em;">4 roles</div>
+        <div class="text-gray-500 text-sm">Owner, Editor,<br />Reviewer, Reader</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- FEATURE SECTIONS -->
+<section id="features" style="padding: 100px 0;">
+  <div class="max-w-6xl mx-auto px-6">
+
+    <!-- Section label -->
+    <p class="text-gray-600 text-xs font-semibold uppercase tracking-widest mb-16">Core capabilities</p>
+
+    <!-- FEATURE 1: Push/Pull -->
+    <div class="feature-row grid md:grid-cols-2 gap-16 items-center pb-20 mb-20" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <div>
+        <div class="badge-new mb-4" style="font-size: 10px;">Push / Pull</div>
+        <h2 class="text-white font-semibold mb-4" style="font-size: 32px; letter-spacing: -0.03em; line-height: 1.15;">Push your docs.<br />Pull what changed.</h2>
+        <p class="text-gray-500 mb-6" style="font-size: 15px; line-height: 1.7;">
+          Sync entire document collections with a single command. The CLI collects markdown files from your configured paths, hashes each one, and only transmits what changed.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Branch-namespaced — each git branch gets its own state
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><span class="cmd-inline">--force</span> flag to bypass conflict guard when you mean it</span>
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Sync state stored in <span class="cmd-inline">.specter-sync</span> (gitignored)
+          </li>
+        </ul>
+      </div>
+
+      <!-- Code block: specter push output -->
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="ml-2 text-gray-600 text-xs">terminal</span>
+        </div>
+        <pre style="padding: 20px 22px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter push</span>
+
+<span class="token-output">Pushed to hiasinho/specter/main:</span>
+<span class="token-output">  created: 2</span>
+<span class="token-created">    + specs/api-reference.md</span>
+<span class="token-created">    + specs/auth-model.md</span>
+<span class="token-output">  updated: 1</span>
+<span class="token-updated">    ~ specs/overview.md</span>
+<span class="token-output">  unchanged: 4</span>
+
+<span class="token-prompt">$</span> <span class="token-cmd">specter push</span>  <span class="token-comment"># conflict detected</span>
+
+<span class="token-error">Push rejected: 1 document(s) modified on server since last pull:</span>
+<span class="token-error">  ! specs/api-reference.md (server revision 5)</span>
+
+<span class="token-output">Run `specter pull` to sync, then push again.</span></code></pre>
+      </div>
+    </div>
+
+    <!-- FEATURE 2: Config -->
+    <div class="feature-row grid md:grid-cols-2 gap-16 items-center pb-20 mb-20" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+
+      <!-- Code block: .specter config -->
+      <div class="code-block order-2 md:order-1">
+        <div class="code-block-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="ml-2 text-gray-600 text-xs">.specter</span>
+        </div>
+        <pre style="padding: 20px 22px; overflow-x: auto;"><code><span class="token-comment"># drop this file at your repo root</span>
+
+<span class="token-key">project:</span> <span class="token-val">hiasinho/my-project</span>
+
+<span class="token-key">paths:</span>
+  <span class="token-val">- specs/</span>
+  <span class="token-val">- docs/architecture/</span>
+  <span class="token-val">- docs/api/</span>
+
+<span class="token-key">exclude:</span>
+  <span class="token-val">- drafts/</span>
+  <span class="token-val">- "*.wip.md"</span>
+
+<span class="token-comment"># auth via env — never committed</span>
+<span class="token-comment"># export SPECTER_TOKEN=your-token</span></code></pre>
+      </div>
+
+      <div class="order-1 md:order-2">
+        <div class="badge-new mb-4" style="font-size: 10px;">Zero boilerplate</div>
+        <h2 class="text-white font-semibold mb-4" style="font-size: 32px; letter-spacing: -0.03em; line-height: 1.15;">One config file.<br />That's all.</h2>
+        <p class="text-gray-500 mb-6" style="font-size: 15px; line-height: 1.7;">
+          A single <span class="cmd-inline">.specter</span> YAML at your repo root. Declare which paths to sync and what to exclude. The CLI walks up the directory tree to find it — no matter where you run from.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Project namespace: <span class="cmd-inline">owner/slug</span> format
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Glob exclusion patterns supported
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Auth token via <span class="cmd-inline">SPECTER_TOKEN</span> env — never in config
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FEATURE 3: Proposals -->
+    <div class="feature-row grid md:grid-cols-2 gap-16 items-center pb-20 mb-20" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+      <div>
+        <div class="badge-new mb-4" style="font-size: 10px;">Proposals</div>
+        <h2 class="text-white font-semibold mb-4" style="font-size: 32px; letter-spacing: -0.03em; line-height: 1.15;">Suggest edits<br />without overwriting.</h2>
+        <p class="text-gray-500 mb-6" style="font-size: 15px; line-height: 1.7;">
+          Reviewers propose targeted changes — replace, insert, delete, or annotate — anchored to exact text positions. Editors accept or reject. Nothing mutates until approved.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Types: <span class="cmd-inline">replace</span> <span class="cmd-inline">insert</span> <span class="cmd-inline">delete</span> <span class="cmd-inline">note</span>
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Anchored by content snippet + line hint
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Designed for AI agents operating as reviewers
+          </li>
+        </ul>
+      </div>
+
+      <!-- Code block: proposal API -->
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="ml-2 text-gray-600 text-xs">specter propose</span>
+        </div>
+        <pre style="padding: 20px 22px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter propose</span> specs/auth-model.md \
+    --type replace \
+    --anchor <span class="token-string">"Users authenticate via JWT"</span> \
+    --body <span class="token-string">"Users authenticate via API tokens"</span>
+
+<span class="token-output">Proposal created: #a3f9c2d</span>
+<span class="token-output">  document:  specs/auth-model.md</span>
+<span class="token-output">  type:      replace</span>
+<span class="token-output">  status:    pending</span>
+
+<span class="token-prompt">$</span> <span class="token-cmd">specter proposals</span> <span class="token-comment"># list open</span>
+
+<span class="token-output">#a3f9c2d  specs/auth-model.md  replace  pending</span>
+<span class="token-output">#b1e44f1  specs/overview.md    note     pending</span>
+
+<span class="token-prompt">$</span> <span class="token-cmd">specter review</span> a3f9c2d --accept</code></pre>
+      </div>
+    </div>
+
+    <!-- FEATURE 4: History -->
+    <div class="feature-row grid md:grid-cols-2 gap-16 items-center">
+
+      <!-- Code block: history diff -->
+      <div class="code-block order-2 md:order-1">
+        <div class="code-block-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span class="ml-2 text-gray-600 text-xs">specter history</span>
+        </div>
+        <pre style="padding: 20px 22px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter history</span> specs/auth-model.md
+
+<span class="token-output">rev 5  alice    2026-03-13 09:14</span>
+<span class="token-output">rev 4  bob      2026-03-12 17:32</span>
+<span class="token-output">rev 3  alice    2026-03-11 11:05</span>
+
+<span class="token-prompt">$</span> <span class="token-cmd">specter diff</span> specs/auth-model.md --from 4 --to 5
+
+<span class="token-comment">--- revision 4</span>
+<span class="token-comment">+++ revision 5</span>
+<span class="token-comment">@@ -12,7 +12,7 @@</span>
+<span class="token-unchanged"> ## Authentication</span>
+
+<span class="token-error">-Users authenticate via JWT tokens issued</span>
+<span class="token-created">+Users authenticate via API tokens issued</span>
+<span class="token-unchanged"> on login. Tokens expire after 24h.</span></code></pre>
+      </div>
+
+      <div class="order-1 md:order-2">
+        <div class="badge-new mb-4" style="font-size: 10px;">History</div>
+        <h2 class="text-white font-semibold mb-4" style="font-size: 32px; letter-spacing: -0.03em; line-height: 1.15;">Every revision.<br />Instantly diffable.</h2>
+        <p class="text-gray-500 mb-6" style="font-size: 15px; line-height: 1.7;">
+          Specter retains the last 20 revisions per document. View the full edit trail, inspect any past version, and diff two revisions with unified output — just like <span class="cmd-inline">git diff</span>.
+        </p>
+        <ul class="space-y-2">
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Author attribution on every revision
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Unified diff format — pipe anywhere
+          </li>
+          <li class="flex items-start gap-3 text-sm text-gray-500">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="mt-0.5 flex-shrink-0"><path d="M3 8L6.5 11.5L13 5" stroke="#888" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span><span class="cmd-inline">specter diff</span> compares local against remote</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- API SECTION -->
+<section id="api" style="padding: 100px 0;">
+  <div class="max-w-6xl mx-auto px-6">
+
+    <div class="grid md:grid-cols-2 gap-16 items-start">
+      <div>
+        <p class="text-gray-600 text-xs font-semibold uppercase tracking-widest mb-6">REST API</p>
+        <h2 class="text-white font-semibold mb-4" style="font-size: 36px; letter-spacing: -0.03em; line-height: 1.15;">Built for<br />AI agents.</h2>
+        <p class="text-gray-500 mb-8" style="font-size: 15px; line-height: 1.7;">
+          Every CLI command maps to a clean REST endpoint. Your agents can push context, pull the latest specs, and raise proposals — programmatically, without the CLI.
+        </p>
+
+        <div class="space-y-3">
+          <!-- Endpoint list -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px;" class="flex items-center justify-between">
+            <span class="text-xs font-mono" style="color: #60a5fa;">POST</span>
+            <span class="text-sm text-gray-400 font-mono ml-3 flex-1">/sync/:owner/:slug</span>
+            <span class="text-xs text-gray-600">bulk push</span>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px;" class="flex items-center justify-between">
+            <span class="text-xs font-mono" style="color: #4ade80;">GET</span>
+            <span class="text-sm text-gray-400 font-mono ml-3 flex-1">/sync/:owner/:slug</span>
+            <span class="text-xs text-gray-600">pull changes</span>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px;" class="flex items-center justify-between">
+            <span class="text-xs font-mono" style="color: #60a5fa;">POST</span>
+            <span class="text-sm text-gray-400 font-mono ml-3 flex-1">/proposals/:owner/:slug</span>
+            <span class="text-xs text-gray-600">create proposal</span>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px;" class="flex items-center justify-between">
+            <span class="text-xs font-mono" style="color: #fbbf24;">PATCH</span>
+            <span class="text-sm text-gray-400 font-mono ml-3 flex-1">/proposals/:owner/:slug/:id</span>
+            <span class="text-xs text-gray-600">accept / reject</span>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 16px;" class="flex items-center justify-between">
+            <span class="text-xs font-mono" style="color: #4ade80;">GET</span>
+            <span class="text-sm text-gray-400 font-mono ml-3 flex-1">/document-history/:owner/:slug/:path/diff</span>
+            <span class="text-xs text-gray-600">unified diff</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code block: API call -->
+      <div>
+        <div class="code-block mb-4">
+          <div class="code-block-header">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+            <span class="ml-2 text-gray-600 text-xs">HTTP — create proposal</span>
+          </div>
+          <pre style="padding: 20px 22px; overflow-x: auto;"><code><span class="token-comment">POST /proposals/hiasinho/specter</span>
+<span class="token-comment">x-specter-token: your-token</span>
+<span class="token-comment">Content-Type: application/json</span>
+
+{
+  <span class="token-key">"document_path":</span> <span class="token-string">"specs/auth-model.md"</span>,
+  <span class="token-key">"branch":</span>        <span class="token-string">"main"</span>,
+  <span class="token-key">"type":</span>          <span class="token-string">"replace"</span>,
+  <span class="token-key">"anchor_content":</span> <span class="token-string">"Users authenticate via JWT"</span>,
+  <span class="token-key">"anchor_line_hint":</span> <span class="token-val">42</span>,
+  <span class="token-key">"body":</span>          <span class="token-string">"Users authenticate via API tokens"</span>
+}
+
+<span class="token-comment">→ 201 Created</span>
+{
+  <span class="token-key">"id":</span>     <span class="token-string">"a3f9c2d..."</span>,
+  <span class="token-key">"status":</span> <span class="token-string">"pending"</span>
+}</code></pre>
+        </div>
+        <p class="text-gray-600 text-xs" style="line-height: 1.6;">
+          Auth via <span class="cmd-inline">x-specter-token</span> header. All endpoints at<br />
+          <span class="cmd-inline">https://yentronrhnmpewiyeqxd.supabase.co/functions/v1</span>
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- QUICKSTART -->
+<section id="quickstart" style="padding: 100px 0;">
+  <div class="max-w-3xl mx-auto px-6">
+
+    <p class="text-gray-600 text-xs font-semibold uppercase tracking-widest mb-6 text-center">Quickstart</p>
+    <h2 class="text-white font-semibold text-center mb-4" style="font-size: 36px; letter-spacing: -0.03em; line-height: 1.15;">Get started in seconds.</h2>
+    <p class="text-gray-500 text-center mb-16" style="font-size: 15px;">No daemon. No cloud config UI. Just a binary and a token.</p>
+
+    <!-- Steps -->
+    <div class="space-y-4">
+
+      <!-- Step 1 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);" class="flex items-center gap-3">
+          <span class="step-num">1</span>
+          <span class="text-sm text-white font-medium">Install the CLI</span>
+        </div>
+        <pre style="padding: 16px 20px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">go install github.com/hiasinho/specter@latest</span></code></pre>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);" class="flex items-center gap-3">
+          <span class="step-num">2</span>
+          <span class="text-sm text-white font-medium">Register and set your token</span>
+        </div>
+        <pre style="padding: 16px 20px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter register</span> --email you@example.com --username yourname \
+    --invite-code a1b2c3d4e5f6a7b8
+
+<span class="token-output">Registered. Your token: 4e9f2a...</span>
+
+<span class="token-prompt">$</span> <span class="token-cmd">export SPECTER_TOKEN=4e9f2a...</span></code></pre>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);" class="flex items-center gap-3">
+          <span class="step-num">3</span>
+          <span class="text-sm text-white font-medium">Initialize a project</span>
+        </div>
+        <pre style="padding: 16px 20px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter init</span> --name "My Project" --slug my-project
+
+<span class="token-output">Project created: yourname/my-project</span>
+<span class="token-output">Config written to .specter</span></code></pre>
+      </div>
+
+      <!-- Step 4 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);" class="flex items-center gap-3">
+          <span class="step-num">4</span>
+          <span class="text-sm text-white font-medium">Push your documents</span>
+        </div>
+        <pre style="padding: 16px 20px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter push</span>
+
+<span class="token-output">Pushed to yourname/my-project/main:</span>
+<span class="token-created">  + specs/overview.md</span>
+<span class="token-created">  + specs/api.md</span></code></pre>
+      </div>
+
+      <!-- Step 5 -->
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);" class="flex items-center gap-3">
+          <span class="step-num">5</span>
+          <span class="text-sm text-white font-medium">Invite your team (optional)</span>
+        </div>
+        <pre style="padding: 16px 20px; overflow-x: auto;"><code><span class="token-prompt">$</span> <span class="token-cmd">specter invite</span> --role editor
+
+<span class="token-output">Invite created. Share this code: f7c91e44...</span>
+
+<span class="token-comment"># Teammate redeems it:</span>
+<span class="token-prompt">$</span> <span class="token-cmd">specter invite redeem</span> f7c91e44</code></pre>
+      </div>
+
+    </div>
+
+    <!-- CTA below quickstart -->
+    <div class="text-center mt-14">
+      <p class="text-gray-500 text-sm mb-6">Need an invite code to register? Specter is invite-only during early access.</p>
+      <div class="flex items-center justify-center gap-4 flex-wrap">
+        <a href="https://github.com/hiasinho/specter" class="btn-primary">
+          View on GitHub
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1C3.46 1 1 3.46 1 6.5c0 2.43 1.57 4.49 3.75 5.22.27.05.37-.12.37-.26v-.91c-1.52.33-1.84-.74-1.84-.74-.25-.63-.61-.8-.61-.8-.5-.34.04-.33.04-.33.55.04.84.57.84.57.49.84 1.28.6 1.59.46.05-.36.19-.6.35-.74-1.21-.14-2.48-.61-2.48-2.7 0-.6.21-1.08.56-1.47-.06-.14-.24-.7.05-1.45 0 0 .46-.15 1.5.56a5.2 5.2 0 0 1 2.73 0c1.04-.71 1.5-.56 1.5-.56.29.75.11 1.31.05 1.45.35.39.56.87.56 1.47 0 2.1-1.28 2.56-2.49 2.69.19.17.37.5.37 1v1.48c0 .14.1.31.38.26A5.5 5.5 0 0 0 12 6.5C12 3.46 9.54 1 6.5 1z" fill="currentColor"/></svg>
+        </a>
+        <a href="mailto:hi@specter.run" class="btn-ghost">Request access</a>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- COMMAND REFERENCE -->
+<section style="padding: 80px 0;">
+  <div class="max-w-6xl mx-auto px-6">
+    <p class="text-gray-600 text-xs font-semibold uppercase tracking-widest mb-10">All commands</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter push</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Sync local markdown files to the server. Conflict-safe by default.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter pull</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Pull documents changed since last sync. Updates local files.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter status</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Show which local documents differ from the remote.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter diff</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Show unified diff between local and remote content.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter propose</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Submit a targeted proposal to change a document.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter proposals</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">List all pending and resolved proposals on a project.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter review</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Accept or reject a proposal by ID.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter history</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">View revision history for a document. Show any past version.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter invite</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Generate or redeem an invite link with a specific role.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter init</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Create a project and write <span class="cmd-inline">.specter</span> config.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter register</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Create a user account with an invite code.</p>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 16px 18px;" class="card-bg-hover transition-colors duration-150">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="cmd-inline">specter skill</span>
+        </div>
+        <p class="text-gray-500 text-xs leading-relaxed">Fetch and print the AI agent skill definition for this project.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="section-divider" />
+
+<!-- FOOTER -->
+<footer style="padding: 48px 0 56px;">
+  <div class="max-w-6xl mx-auto px-6">
+    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+      <div>
+        <div class="text-white font-semibold text-sm mb-1 tracking-tight">Specter</div>
+        <p class="text-gray-600 text-xs">A sync layer for your team's documents.</p>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <div class="flex items-center gap-6">
+          <a href="https://github.com/hiasinho/specter" class="text-xs text-gray-500 hover:text-white transition-colors duration-150">GitHub</a>
+          <a href="#api" class="text-xs text-gray-500 hover:text-white transition-colors duration-150">API</a>
+          <a href="#quickstart" class="text-xs text-gray-500 hover:text-white transition-colors duration-150">Docs</a>
+          <a href="mailto:hi@specter.run" class="text-xs text-gray-500 hover:text-white transition-colors duration-150">Contact</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-10 pt-6" style="border-top: 1px solid rgba(255,255,255,0.06);">
+      <p class="text-gray-700 text-xs">Built with Go. MIT licensed.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

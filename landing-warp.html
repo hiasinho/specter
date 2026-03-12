@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specter — The sync layer for your team's docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#121212',
+            surface: 'rgba(41,41,41,0.5)',
+            cream: '#faf9f6',
+            accent: '#10e06f',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          letterSpacing: {
+            'display': '-0.025em',
+            'heading': '-0.015em',
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #121212;
+      color: #faf9f6;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Opacity hierarchy */
+    .text-primary   { color: rgba(250, 249, 246, 0.9); }
+    .text-secondary { color: rgba(250, 249, 246, 0.7); }
+    .text-tertiary  { color: rgba(250, 249, 246, 0.5); }
+    .text-ghost     { color: rgba(250, 249, 246, 0.1); }
+
+    /* Glass surface */
+    .glass {
+      background: rgba(41, 41, 41, 0.5);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(250, 249, 246, 0.1);
+    }
+
+    /* CTA button — cream on dark */
+    .btn-primary {
+      background: #faf9f6;
+      color: #121212;
+      font-weight: 500;
+      font-size: 0.875rem;
+      padding: 0.625rem 1.5rem;
+      border-radius: 6px;
+      letter-spacing: -0.01em;
+      transition: box-shadow 100ms linear, background 100ms linear;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 0 0 0.75rem rgba(250, 249, 246, 0.05);
+    }
+
+    /* Ghost button */
+    .btn-ghost {
+      background: transparent;
+      color: rgba(250, 249, 246, 0.7);
+      font-weight: 400;
+      font-size: 0.875rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6px;
+      border: 1px solid rgba(250, 249, 246, 0.15);
+      letter-spacing: -0.01em;
+      transition: border-color 100ms linear, color 100ms linear, box-shadow 100ms linear;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .btn-ghost:hover {
+      border-color: rgba(250, 249, 246, 0.3);
+      color: rgba(250, 249, 246, 0.9);
+      box-shadow: 0 0 0 0.75rem rgba(250, 249, 246, 0.03);
+    }
+
+    /* Hero radial glow */
+    .hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -55%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(16, 224, 111, 0.20) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Terminal / screenshot frame */
+    .frame {
+      border: 1px solid rgba(250, 249, 246, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 2 / 1;
+      background: rgba(41, 41, 41, 0.5);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+    }
+
+    .frame-bar {
+      background: rgba(250, 249, 246, 0.05);
+      border-bottom: 1px solid rgba(250, 249, 246, 0.08);
+      padding: 0.6rem 0.875rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(250, 249, 246, 0.12);
+    }
+
+    .dot-green { background: #10e06f; opacity: 0.85; }
+
+    .terminal-body {
+      padding: 1.25rem 1.5rem;
+      font-family: 'SF Mono', 'Fira Code', 'Fira Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.7;
+      height: calc(100% - 34px);
+      overflow: hidden;
+    }
+
+    .t-prompt { color: #10e06f; }
+    .t-cmd    { color: rgba(250, 249, 246, 0.9); }
+    .t-out    { color: rgba(250, 249, 246, 0.55); }
+    .t-hi     { color: #10e06f; }
+    .t-dim    { color: rgba(250, 249, 246, 0.3); }
+
+    /* Status dot indicator */
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10e06f;
+      box-shadow: 0 0 6px rgba(16, 224, 111, 0.6);
+      flex-shrink: 0;
+    }
+
+    /* Section divider (just space, no line) */
+    .section-gap { margin-top: 10rem; }
+
+    /* Feature card hover */
+    .feature-card {
+      transition: border-color 400ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .feature-card:hover {
+      border-color: rgba(250, 249, 246, 0.18);
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(18, 18, 18, 0.75);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(250, 249, 246, 0.07);
+    }
+
+    /* Code highlight */
+    .code-line { display: block; }
+    .code-line + .code-line { margin-top: 0.1rem; }
+
+    /* Subtle section label */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(250, 249, 246, 0.4);
+    }
+
+    /* Glow chip */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(16, 224, 111, 0.07);
+      border: 1px solid rgba(16, 224, 111, 0.2);
+      border-radius: 100px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: rgba(16, 224, 111, 0.9);
+      letter-spacing: 0.02em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div style="max-width: 1100px; margin: 0 auto; padding: 0 2rem; height: 52px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <span class="status-dot"></span>
+      <span style="font-weight:500; font-size:0.9rem; color:rgba(250,249,246,0.9); letter-spacing:-0.01em;">specter</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:1.75rem;">
+      <a href="#features" style="font-size:0.82rem; color:rgba(250,249,246,0.55); text-decoration:none; transition:color 100ms linear;" onmouseover="this.style.color='rgba(250,249,246,0.85)'" onmouseout="this.style.color='rgba(250,249,246,0.55)'">Features</a>
+      <a href="#quickstart" style="font-size:0.82rem; color:rgba(250,249,246,0.55); text-decoration:none; transition:color 100ms linear;" onmouseover="this.style.color='rgba(250,249,246,0.85)'" onmouseout="this.style.color='rgba(250,249,246,0.55)'">Quickstart</a>
+      <a href="https://github.com" style="font-size:0.82rem; color:rgba(250,249,246,0.55); text-decoration:none; transition:color 100ms linear;" onmouseover="this.style.color='rgba(250,249,246,0.85)'" onmouseout="this.style.color='rgba(250,249,246,0.55)'">GitHub</a>
+      <a href="#" class="btn-primary" style="padding: 0.4rem 1rem; font-size:0.78rem;">Get started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section style="position:relative; padding: 11rem 2rem 7rem; text-align:center; overflow:hidden;">
+  <div class="hero-glow"></div>
+  <div style="position:relative; z-index:1; max-width:680px; margin:0 auto;">
+
+    <div style="margin-bottom:1.5rem; display:flex; justify-content:center;">
+      <div class="chip">
+        <span class="status-dot" style="width:5px;height:5px;"></span>
+        Open source · Built for AI agents &amp; humans
+      </div>
+    </div>
+
+    <h1 style="font-size:clamp(2.5rem, 6vw, 4.25rem); font-weight:400; letter-spacing:-0.025em; line-height:1.08; color:rgba(250,249,246,0.92); margin-bottom:1.25rem;">
+      The sync layer<br>for your team's specs
+    </h1>
+
+    <p style="font-size:1.0625rem; color:rgba(250,249,246,0.6); line-height:1.65; max-width:480px; margin:0 auto 2.5rem; font-weight:400; letter-spacing:-0.005em;">
+      Push and pull markdown documents across your team. Detect conflicts before they happen. Branch-aware, hash-verified, CLI-first.
+    </p>
+
+    <div style="display:flex; gap:0.75rem; justify-content:center; align-items:center; flex-wrap:wrap;">
+      <a href="#quickstart" class="btn-primary">Install Specter</a>
+      <a href="https://github.com" class="btn-ghost">View on GitHub</a>
+    </div>
+
+    <!-- Terminal Hero Mockup -->
+    <div class="frame" style="max-width:700px; margin:4rem auto 0; text-align:left;">
+      <div class="frame-bar">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot dot-green"></div>
+        <span style="margin-left:0.5rem; font-size:0.7rem; color:rgba(250,249,246,0.3); font-family:'SF Mono','Fira Code',monospace; letter-spacing:0.01em;">specter push</span>
+      </div>
+      <div class="terminal-body">
+        <span class="code-line"><span class="t-prompt">→</span> <span class="t-cmd">specter push</span></span>
+        <span class="code-line t-out" style="margin-top:0.5rem;">Collecting documents from <span class="t-dim">docs/, specs/, README.md</span></span>
+        <span class="code-line t-out">Found <span class="t-hi">7 documents</span> · branch <span class="t-hi">main</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;">  <span class="t-hi">↑</span>  docs/architecture.md        <span class="t-dim">modified</span></span>
+        <span class="code-line t-out">  <span class="t-hi">↑</span>  specs/api-v2.md             <span class="t-dim">new</span></span>
+        <span class="code-line t-out">  <span class="t-dim">–</span>  docs/onboarding.md          <span class="t-dim">unchanged</span></span>
+        <span class="code-line t-out">  <span class="t-dim">–</span>  docs/runbook.md             <span class="t-dim">unchanged</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;">Pushing 2 documents...</span>
+        <span class="code-line" style="margin-top:0.4rem;"><span class="t-hi">✓</span> <span class="t-out">Synced to revision</span> <span class="t-hi">r42</span></span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" style="max-width:1100px; margin:0 auto; padding:0 2rem;">
+
+  <!-- Feature 1: Push/Pull sync -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:9rem;">
+    <div>
+      <div class="section-label" style="margin-bottom:1rem;">Sync</div>
+      <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9); margin-bottom:1rem;">
+        Push. Pull. Stay current.
+      </h2>
+      <p style="font-size:0.9375rem; color:rgba(250,249,246,0.6); line-height:1.7; margin-bottom:1.75rem; font-weight:400;">
+        Specter syncs your markdown collection against a shared remote. Every push computes SHA256 hashes so only what changed travels over the wire. Pull with a single command to get your team's latest.
+      </p>
+      <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Hash-based diff — only changed files sync
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Revision tracking via <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">.specter-sync</code>
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Preview changes before they land with <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">status</code> and <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">diff</code>
+        </li>
+      </ul>
+    </div>
+    <div class="frame feature-card">
+      <div class="frame-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot dot-green"></div>
+        <span style="margin-left:0.5rem; font-size:0.7rem; color:rgba(250,249,246,0.3); font-family:'SF Mono','Fira Code',monospace;">specter pull</span>
+      </div>
+      <div class="terminal-body">
+        <span class="code-line"><span class="t-prompt">→</span> <span class="t-cmd">specter pull</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;">Remote revision: <span class="t-hi">r44</span>  Local: <span class="t-dim">r42</span></span>
+        <span class="code-line t-out" style="margin-top:0.3rem;">  <span class="t-hi">↓</span>  specs/api-v2.md             <span class="t-dim">updated by alice</span></span>
+        <span class="code-line t-out">  <span class="t-hi">↓</span>  docs/deployment.md          <span class="t-dim">new from bob</span></span>
+        <span class="code-line t-out" style="margin-top:0.3rem;">Writing 2 files to disk...</span>
+        <span class="code-line" style="margin-top:0.4rem;"><span class="t-hi">✓</span> <span class="t-out">Now at revision</span> <span class="t-hi">r44</span></span>
+        <span class="code-line t-out" style="margin-top:0.5rem;"><span class="t-dim">hint: run specter status to see the full picture</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature 2: Conflict detection -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:9rem;">
+    <div class="frame feature-card" style="order:0;">
+      <div class="frame-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot dot-green"></div>
+        <span style="margin-left:0.5rem; font-size:0.7rem; color:rgba(250,249,246,0.3); font-family:'SF Mono','Fira Code',monospace;">specter status</span>
+      </div>
+      <div class="terminal-body">
+        <span class="code-line"><span class="t-prompt">→</span> <span class="t-cmd">specter status</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;">Branch: <span class="t-hi">feature/new-auth</span>  Revision: <span class="t-hi">r44</span></span>
+        <span class="code-line t-out" style="margin-top:0.3rem;">  <span style="color:rgba(250,180,80,0.85);">!</span>  docs/auth.md          <span class="t-dim">conflict — modified locally &amp; remotely</span></span>
+        <span class="code-line t-out">  <span class="t-hi">M</span>  specs/api-v2.md       <span class="t-dim">local changes</span></span>
+        <span class="code-line t-out">  <span class="t-dim">–</span>  docs/runbook.md       <span class="t-dim">clean</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;"><span style="color:rgba(250,180,80,0.85);">1 conflict detected.</span></span>
+        <span class="code-line t-out"><span class="t-dim">resolve with: specter diff docs/auth.md</span></span>
+      </div>
+    </div>
+    <div style="order:1;">
+      <div class="section-label" style="margin-bottom:1rem;">Conflict detection</div>
+      <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9); margin-bottom:1rem;">
+        Conflicts surface before they hurt.
+      </h2>
+      <p style="font-size:0.9375rem; color:rgba(250,249,246,0.6); line-height:1.7; margin-bottom:1.75rem; font-weight:400;">
+        Every push checks the remote revision against your last-synced state. If someone else updated a document you also touched, Specter stops and tells you exactly which files diverged — before anything overwrites anything.
+      </p>
+      <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          SHA256 content hashing — no false positives
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">specter diff</code> shows exactly what changed, document by document
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Never silently overwrites remote work
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Feature 3: Proposals -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:9rem;">
+    <div>
+      <div class="section-label" style="margin-bottom:1rem;">Proposals</div>
+      <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9); margin-bottom:1rem;">
+        Suggest changes.<br>Review before merging.
+      </h2>
+      <p style="font-size:0.9375rem; color:rgba(250,249,246,0.6); line-height:1.7; margin-bottom:1.75rem; font-weight:400;">
+        Specter proposals are lightweight change requests for documents — like pull requests, but for your specs. Propose edits from a branch, list open proposals, and approve or reject them inline from the CLI.
+      </p>
+      <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">specter propose</code> opens a proposal from current changes
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">specter proposals</code> lists all open proposals
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">specter review</code> approve or reject with a comment
+        </li>
+      </ul>
+    </div>
+    <div class="frame feature-card">
+      <div class="frame-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot dot-green"></div>
+        <span style="margin-left:0.5rem; font-size:0.7rem; color:rgba(250,249,246,0.3); font-family:'SF Mono','Fira Code',monospace;">specter proposals</span>
+      </div>
+      <div class="terminal-body">
+        <span class="code-line"><span class="t-prompt">→</span> <span class="t-cmd">specter proposals</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;"><span class="t-dim">#3</span>  Update auth spec           <span class="t-dim">alice · 2h ago</span></span>
+        <span class="code-line t-out">     <span class="t-dim">→ docs/auth.md (2 changes)</span></span>
+        <span class="code-line t-out" style="margin-top:0.3rem;"><span class="t-dim">#4</span>  Add deployment runbook     <span class="t-dim">bob · 45m ago</span></span>
+        <span class="code-line t-out">     <span class="t-dim">→ docs/runbook.md (new file)</span></span>
+        <span class="code-line" style="margin-top:0.6rem;"><span class="t-prompt">→</span> <span class="t-cmd">specter review 4 --approve</span></span>
+        <span class="code-line" style="margin-top:0.3rem;"><span class="t-hi">✓</span> <span class="t-out">Proposal #4 approved and merged</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature 4: Branch-aware -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; margin-bottom:3rem;">
+    <div class="frame feature-card" style="order:0;">
+      <div class="frame-bar">
+        <div class="dot"></div><div class="dot"></div><div class="dot dot-green"></div>
+        <span style="margin-left:0.5rem; font-size:0.7rem; color:rgba(250,249,246,0.3); font-family:'SF Mono','Fira Code',monospace;">specter push  (on feature branch)</span>
+      </div>
+      <div class="terminal-body">
+        <span class="code-line t-out"><span class="t-dim">$ git branch</span></span>
+        <span class="code-line t-out">  main</span>
+        <span class="code-line t-out"><span class="t-hi">* feature/redesign-api</span></span>
+        <span class="code-line" style="margin-top:0.5rem;"><span class="t-prompt">→</span> <span class="t-cmd">specter push</span></span>
+        <span class="code-line t-out" style="margin-top:0.4rem;">Branch namespace: <span class="t-hi">feature/redesign-api</span></span>
+        <span class="code-line t-out">Documents pushed to branch-scoped remote.</span>
+        <span class="code-line t-out" style="margin-top:0.3rem;"><span class="t-dim">Isolated from main · merge via proposal</span></span>
+        <span class="code-line" style="margin-top:0.5rem;"><span class="t-hi">✓</span> <span class="t-out">Synced at revision</span> <span class="t-hi">r11</span> <span class="t-dim">(branch)</span></span>
+      </div>
+    </div>
+    <div style="order:1;">
+      <div class="section-label" style="margin-bottom:1rem;">Branch-aware</div>
+      <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9); margin-bottom:1rem;">
+        Your git branch is your namespace.
+      </h2>
+      <p style="font-size:0.9375rem; color:rgba(250,249,246,0.6); line-height:1.7; margin-bottom:1.75rem; font-weight:400;">
+        Specter reads your current git branch and scopes every push and pull to that branch automatically. Work on <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; color:rgba(250,249,246,0.5);">feature/redesign-api</code> without touching <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; color:rgba(250,249,246,0.5);">main</code>.
+      </p>
+      <ul style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:0.6rem;">
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Auto-detected from <code style="font-family:'SF Mono','Fira Code',monospace; font-size:0.8rem; color:rgba(250,249,246,0.5);">git rev-parse</code> — zero config
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Isolated revisions per branch
+        </li>
+        <li style="display:flex; align-items:flex-start; gap:0.6rem; font-size:0.875rem; color:rgba(250,249,246,0.6);">
+          <span class="status-dot" style="margin-top:0.35rem; width:6px; height:6px;"></span>
+          Merge work back to main via proposals
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- QUICKSTART -->
+<section id="quickstart" style="max-width:1100px; margin:9rem auto 0; padding:0 2rem;">
+  <div style="max-width:680px; margin:0 auto; text-align:center; margin-bottom:3.5rem;">
+    <div class="section-label" style="margin-bottom:1rem;">Quickstart</div>
+    <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9);">
+      Up and running in two minutes.
+    </h2>
+  </div>
+
+  <div class="glass" style="border-radius:12px; padding:2rem 2.5rem; max-width:700px; margin:0 auto;">
+    <div style="display:flex; flex-direction:column; gap:1.5rem;">
+
+      <div>
+        <div style="font-size:0.7rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:rgba(250,249,246,0.35); margin-bottom:0.6rem;">1 · Install</div>
+        <div style="font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.7; background:rgba(250,249,246,0.04); border-radius:6px; padding:0.875rem 1rem; border:1px solid rgba(250,249,246,0.07);">
+          <span class="t-prompt">$</span> <span class="t-cmd">go install github.com/hiasinho/specter@latest</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.7rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:rgba(250,249,246,0.35); margin-bottom:0.6rem;">2 · Authenticate</div>
+        <div style="font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.7; background:rgba(250,249,246,0.04); border-radius:6px; padding:0.875rem 1rem; border:1px solid rgba(250,249,246,0.07);">
+          <span class="t-prompt">$</span> <span class="t-cmd">export SPECTER_TOKEN=<span class="t-dim">your-token</span></span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.7rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:rgba(250,249,246,0.35); margin-bottom:0.6rem;">3 · Init your project</div>
+        <div style="font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.7; background:rgba(250,249,246,0.04); border-radius:6px; padding:0.875rem 1rem; border:1px solid rgba(250,249,246,0.07);">
+          <span class="t-prompt">$</span> <span class="t-cmd">specter init</span><br>
+          <span class="t-out" style="padding-left:1rem;">Created .specter — edit project and paths to configure</span>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:0.7rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:rgba(250,249,246,0.35); margin-bottom:0.6rem;">4 · Sync</div>
+        <div style="font-family:'SF Mono','Fira Code',monospace; font-size:0.82rem; line-height:1.7; background:rgba(250,249,246,0.04); border-radius:6px; padding:0.875rem 1rem; border:1px solid rgba(250,249,246,0.07);">
+          <span class="t-prompt">$</span> <span class="t-cmd">specter push</span><br>
+          <span class="t-hi" style="padding-left:1rem;">✓</span> <span class="t-out"> Synced 4 documents to revision r1</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid rgba(250,249,246,0.07);">
+      <div style="font-size:0.7rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:rgba(250,249,246,0.35); margin-bottom:0.875rem;">All commands</div>
+      <div style="display:flex; flex-wrap:wrap; gap:0.4rem;">
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">push</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">pull</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">status</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">diff</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">propose</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">proposals</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">review</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">history</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">invite</span>
+        <span style="font-family:'SF Mono','Fira Code',monospace; font-size:0.78rem; color:rgba(250,249,246,0.6); background:rgba(250,249,246,0.06); border:1px solid rgba(250,249,246,0.08); border-radius:4px; padding:0.2rem 0.55rem;">init</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section style="max-width:780px; margin:10rem auto; padding:0 2rem; text-align:center;">
+  <div style="position:relative; display:inline-block; width:100%;">
+    <!-- Subtle left accent line -->
+    <div style="position:absolute; left:0; top:50%; transform:translateY(-50%); width:2px; height:60px; background:linear-gradient(to bottom, transparent, rgba(16,224,111,0.4), transparent); border-radius:2px;"></div>
+    <blockquote style="margin:0; padding:0 2.5rem;">
+      <p style="font-size:clamp(1.2rem, 2.5vw, 1.625rem); font-weight:400; letter-spacing:-0.018em; line-height:1.45; color:rgba(250,249,246,0.85); margin:0 0 1.25rem;">
+        "Your docs live in your repo.<br>Specter syncs them — it doesn't own them."
+      </p>
+      <cite style="font-size:0.8rem; color:rgba(250,249,246,0.35); font-style:normal; letter-spacing:0.02em;">Specter design philosophy</cite>
+    </blockquote>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section style="padding:0 2rem 8rem; text-align:center;">
+  <div style="max-width:520px; margin:0 auto;">
+    <h2 style="font-size:clamp(1.75rem, 3.5vw, 2.5rem); font-weight:400; letter-spacing:-0.015em; line-height:1.15; color:rgba(250,249,246,0.9); margin-bottom:1rem;">
+      Start syncing your docs today.
+    </h2>
+    <p style="font-size:0.9375rem; color:rgba(250,249,246,0.55); line-height:1.65; margin-bottom:2rem;">
+      Open source. No lock-in. Your markdown stays in your repo.
+    </p>
+    <div style="display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap;">
+      <a href="#quickstart" class="btn-primary">Get started</a>
+      <a href="https://github.com" class="btn-ghost">View source</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="border-top: 1px solid rgba(250,249,246,0.07); padding:2rem; max-width:1100px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+  <div style="display:flex; align-items:center; gap:0.5rem;">
+    <span class="status-dot" style="width:6px; height:6px;"></span>
+    <span style="font-size:0.82rem; font-weight:500; color:rgba(250,249,246,0.6); letter-spacing:-0.01em;">specter</span>
+  </div>
+  <div style="display:flex; gap:2rem; align-items:center;">
+    <a href="https://github.com" style="font-size:0.78rem; color:rgba(250,249,246,0.35); text-decoration:none; transition:color 100ms linear;" onmouseover="this.style.color='rgba(250,249,246,0.65)'" onmouseout="this.style.color='rgba(250,249,246,0.35)'">GitHub</a>
+    <a href="#" style="font-size:0.78rem; color:rgba(250,249,246,0.35); text-decoration:none; transition:color 100ms linear;" onmouseover="this.style.color='rgba(250,249,246,0.65)'" onmouseout="this.style.color='rgba(250,249,246,0.35)'">Docs</a>
+    <span style="font-size:0.78rem; color:rgba(250,249,246,0.25);">MIT License</span>
+  </div>
+</footer>
+
+</body>
+</html>

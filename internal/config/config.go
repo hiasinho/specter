@@ -54,6 +54,15 @@ func (c *Config) ProjectSlug() string {
 	return strings.SplitN(c.Project, "/", 2)[1]
 }
 
+// ValidateProject checks that a project string is in owner/slug format.
+func ValidateProject(project string) error {
+	parts := strings.SplitN(project, "/", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return fmt.Errorf("project must be in owner/slug format (e.g. hiasinho/specter), got: %s", project)
+	}
+	return nil
+}
+
 // FindRepoRoot walks up from dir looking for a .specter file.
 func FindRepoRoot(dir string) (string, error) {
 	for {

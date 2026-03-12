@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Specter — The sync layer for product specs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#08090a',
+            card: '#0f0f11',
+            border: '#1c1e21',
+            primary: '#ffffff',
+            secondary: '#6b6f76',
+            accent: '#7180ff',
+            'accent-dim': '#7180ff22',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #08090a;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Dot grid animation */
+    @keyframes dot-pulse {
+      0%, 100% { opacity: 0.3; }
+      50%       { opacity: 1.0; }
+    }
+
+    .dot-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 14px);
+      grid-template-rows: repeat(5, 14px);
+      gap: 10px;
+    }
+
+    .dot-grid span {
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: #7180ff;
+      animation: dot-pulse 3200ms steps(1, end) infinite;
+    }
+
+    .dot-grid span:nth-child(1)  { animation-delay:    0ms; }
+    .dot-grid span:nth-child(2)  { animation-delay:  160ms; }
+    .dot-grid span:nth-child(3)  { animation-delay:  320ms; }
+    .dot-grid span:nth-child(4)  { animation-delay:  480ms; }
+    .dot-grid span:nth-child(5)  { animation-delay:  640ms; }
+    .dot-grid span:nth-child(6)  { animation-delay:  200ms; }
+    .dot-grid span:nth-child(7)  { animation-delay:  360ms; }
+    .dot-grid span:nth-child(8)  { animation-delay:  520ms; }
+    .dot-grid span:nth-child(9)  { animation-delay:  680ms; }
+    .dot-grid span:nth-child(10) { animation-delay:  840ms; }
+    .dot-grid span:nth-child(11) { animation-delay:  400ms; }
+    .dot-grid span:nth-child(12) { animation-delay:  560ms; }
+    .dot-grid span:nth-child(13) { animation-delay:  720ms; }
+    .dot-grid span:nth-child(14) { animation-delay:  880ms; }
+    .dot-grid span:nth-child(15) { animation-delay: 1040ms; }
+    .dot-grid span:nth-child(16) { animation-delay:  600ms; }
+    .dot-grid span:nth-child(17) { animation-delay:  760ms; }
+    .dot-grid span:nth-child(18) { animation-delay:  920ms; }
+    .dot-grid span:nth-child(19) { animation-delay: 1080ms; }
+    .dot-grid span:nth-child(20) { animation-delay: 1240ms; }
+    .dot-grid span:nth-child(21) { animation-delay:  800ms; }
+    .dot-grid span:nth-child(22) { animation-delay:  960ms; }
+    .dot-grid span:nth-child(23) { animation-delay: 1120ms; }
+    .dot-grid span:nth-child(24) { animation-delay: 1280ms; }
+    .dot-grid span:nth-child(25) { animation-delay: 1440ms; }
+
+    /* Radial hero glow */
+    .hero-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse 70% 50% at 50% 40%,
+        rgba(113, 128, 255, 0.12) 0%,
+        rgba(113, 128, 255, 0.04) 40%,
+        transparent 70%
+      );
+      pointer-events: none;
+    }
+
+    /* Blob ambience */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+    }
+
+    /* Terminal styling */
+    .terminal {
+      background: #0c0c0e;
+      border: 1px solid #1c1e21;
+      border-radius: 7px;
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      background: #111214;
+      border-bottom: 1px solid #1c1e21;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .terminal pre {
+      padding: 20px 24px;
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+    }
+
+    .cmd    { color: #7180ff; }
+    .flag   { color: #6b9fff; }
+    .path   { color: #a8c7fa; }
+    .output { color: #6b6f76; }
+    .ok     { color: #4ade80; }
+    .warn   { color: #facc15; }
+    .dim    { color: #3d4147; }
+
+    /* Feature card */
+    .feature-card {
+      background: #0f0f11;
+      border: 1px solid #1c1e21;
+      border-radius: 7px;
+      padding: 28px 24px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 300ms ease;
+    }
+
+    .feature-card:hover {
+      border-color: #2a2d34;
+    }
+
+    .feature-card .card-glow {
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(113, 128, 255, 0.07);
+      filter: blur(30px);
+      pointer-events: none;
+    }
+
+    /* Step connector */
+    .step-connector {
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(to right, #2a2d34, #1c1e21);
+    }
+
+    /* Mono label */
+    .mono-label {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b6f76;
+    }
+
+    /* Subtle divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #1c1e21 20%, #1c1e21 80%, transparent);
+    }
+
+    /* Heading balance */
+    h1, h2, h3 {
+      text-wrap: balance;
+    }
+
+    /* Scroll fade-in */
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-up {
+      animation: fade-up 600ms ease forwards;
+    }
+
+    .fade-up-delay-1 { animation-delay: 100ms; opacity: 0; }
+    .fade-up-delay-2 { animation-delay: 200ms; opacity: 0; }
+    .fade-up-delay-3 { animation-delay: 300ms; opacity: 0; }
+    .fade-up-delay-4 { animation-delay: 400ms; opacity: 0; }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav style="border-bottom: 1px solid #1c1e21; backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; background: rgba(8,9,10,0.85);">
+    <div style="max-width: 1100px; margin: 0 auto; padding: 0 32px; height: 56px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="2" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.9"/>
+          <rect x="11" y="2" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.5"/>
+          <rect x="2" y="11" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.5"/>
+          <rect x="11" y="11" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.25"/>
+        </svg>
+        <span style="font-weight: 500; font-size: 15px; letter-spacing: -0.01em;">Specter</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 28px;">
+        <a href="#features" style="color: #6b6f76; font-size: 14px; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#6b6f76'">Features</a>
+        <a href="#cli" style="color: #6b6f76; font-size: 14px; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#6b6f76'">CLI</a>
+        <a href="https://github.com" style="font-size: 13px; font-weight: 500; color: #ffffff; background: #1c1e21; border: 1px solid #2a2d34; padding: 6px 14px; border-radius: 7px; text-decoration: none; transition: background 200ms;" onmouseover="this.style.background='#242629'" onmouseout="this.style.background='#1c1e21'">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="position: relative; padding: 120px 32px 128px; overflow: hidden; text-align: center;">
+
+    <!-- Background radial glow -->
+    <div class="hero-glow"></div>
+
+    <!-- Ambient blobs -->
+    <div class="blob" style="width: 500px; height: 300px; background: rgba(113,128,255,0.08); top: -60px; left: 50%; transform: translateX(-50%);"></div>
+    <div class="blob" style="width: 200px; height: 200px; background: rgba(113,128,255,0.06); top: 40px; left: 20%;"></div>
+    <div class="blob" style="width: 160px; height: 160px; background: rgba(113,128,255,0.05); top: 80px; right: 18%;"></div>
+
+    <div style="position: relative; max-width: 1100px; margin: 0 auto;">
+
+      <!-- Animated dot grid — top left decorative -->
+      <div style="position: absolute; top: -20px; left: 0; opacity: 0.6;">
+        <div class="dot-grid">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- Animated dot grid — top right decorative -->
+      <div style="position: absolute; top: -20px; right: 0; opacity: 0.6;">
+        <div class="dot-grid">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="fade-up" style="margin-bottom: 20px;">
+        <span class="mono-label" style="background: rgba(113,128,255,0.1); border: 1px solid rgba(113,128,255,0.2); padding: 4px 12px; border-radius: 100px; color: #7180ff;">
+          open source · go · supabase
+        </span>
+      </div>
+
+      <h1 class="fade-up fade-up-delay-1" style="font-size: clamp(40px, 6vw, 72px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; margin: 0 auto 24px; max-width: 800px; color: #ffffff;">
+        The sync layer<br/>
+        <span style="color: #6b6f76; font-style: italic; font-family: Georgia, 'Times New Roman', serif;">for product specs</span>
+      </h1>
+
+      <p class="fade-up fade-up-delay-2" style="font-size: 18px; color: #6b6f76; max-width: 520px; margin: 0 auto 40px; line-height: 1.65; font-weight: 400;">
+        Push and pull your team's markdown documents with conflict detection, branch namespacing, and full history. Built for AI agents and humans alike.
+      </p>
+
+      <div class="fade-up fade-up-delay-3" style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <div class="terminal" style="padding: 0; display: inline-flex; align-items: center;">
+          <pre style="padding: 10px 16px; margin: 0; font-size: 13px;"><span class="cmd">brew install</span> specter-cli</pre>
+        </div>
+        <a href="#" style="font-size: 14px; font-weight: 500; color: #7180ff; text-decoration: none; padding: 10px 20px; border: 1px solid rgba(113,128,255,0.3); border-radius: 7px; background: rgba(113,128,255,0.06); transition: background 200ms;" onmouseover="this.style.background='rgba(113,128,255,0.12)'" onmouseout="this.style.background='rgba(113,128,255,0.06)'">
+          Read the docs →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" style="max-width: 1100px; margin: 0 auto;"></div>
+
+  <!-- Three-step flow -->
+  <section style="padding: 96px 32px; max-width: 1100px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 64px;">
+      <span class="mono-label" style="display: block; margin-bottom: 16px;">how it works</span>
+      <h2 style="font-size: 32px; font-weight: 500; letter-spacing: -0.02em; color: #ffffff; margin: 0;">Three commands. That's it.</h2>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; justify-content: center; gap: 0; flex-wrap: wrap;">
+
+      <!-- Step 1 -->
+      <div style="flex: 1; min-width: 220px; max-width: 280px; text-align: center; padding: 0 24px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 7px; background: rgba(113,128,255,0.1); border: 1px solid rgba(113,128,255,0.2); margin-bottom: 20px;">
+          <span class="mono-label" style="color: #7180ff; font-size: 13px;">01</span>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 500; color: #ffffff; margin: 0 0 10px; letter-spacing: -0.01em;">Initialize</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0 0 16px;">
+          Point Specter at your docs directory. A single YAML config defines what gets synced and what stays local.
+        </p>
+        <div style="background: #0f0f11; border: 1px solid #1c1e21; border-radius: 7px; padding: 10px 14px; text-align: left;">
+          <code style="font-family: ui-monospace, monospace; font-size: 12px; color: #7180ff;">specter init</code>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div style="display: flex; align-items: center; padding-top: 20px; min-width: 48px; justify-content: center;">
+        <div style="width: 24px; height: 1px; background: #1c1e21;"></div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin: 0 -4px;"><path d="M8 3l5 5-5 5" stroke="#2a2d34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div style="width: 24px; height: 1px; background: #1c1e21;"></div>
+      </div>
+
+      <!-- Step 2 -->
+      <div style="flex: 1; min-width: 220px; max-width: 280px; text-align: center; padding: 0 24px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 7px; background: rgba(113,128,255,0.1); border: 1px solid rgba(113,128,255,0.2); margin-bottom: 20px;">
+          <span class="mono-label" style="color: #7180ff; font-size: 13px;">02</span>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 500; color: #ffffff; margin: 0 0 10px; letter-spacing: -0.01em;">Push</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0 0 16px;">
+          Specter hashes every document, detects what changed, and syncs only the delta. Branches get their own namespace automatically.
+        </p>
+        <div style="background: #0f0f11; border: 1px solid #1c1e21; border-radius: 7px; padding: 10px 14px; text-align: left;">
+          <code style="font-family: ui-monospace, monospace; font-size: 12px; color: #7180ff;">specter push</code>
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div style="display: flex; align-items: center; padding-top: 20px; min-width: 48px; justify-content: center;">
+        <div style="width: 24px; height: 1px; background: #1c1e21;"></div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin: 0 -4px;"><path d="M8 3l5 5-5 5" stroke="#2a2d34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div style="width: 24px; height: 1px; background: #1c1e21;"></div>
+      </div>
+
+      <!-- Step 3 -->
+      <div style="flex: 1; min-width: 220px; max-width: 280px; text-align: center; padding: 0 24px;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 7px; background: rgba(113,128,255,0.1); border: 1px solid rgba(113,128,255,0.2); margin-bottom: 20px;">
+          <span class="mono-label" style="color: #7180ff; font-size: 13px;">03</span>
+        </div>
+        <h3 style="font-size: 16px; font-weight: 500; color: #ffffff; margin: 0 0 10px; letter-spacing: -0.01em;">Collaborate</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0 0 16px;">
+          Propose changes, review diffs, pull updates. Your team and your agents all work from the same source of truth.
+        </p>
+        <div style="background: #0f0f11; border: 1px solid #1c1e21; border-radius: 7px; padding: 10px 14px; text-align: left;">
+          <code style="font-family: ui-monospace, monospace; font-size: 12px; color: #7180ff;">specter propose</code>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider" style="max-width: 1100px; margin: 0 auto;"></div>
+
+  <!-- Feature grid -->
+  <section id="features" style="padding: 96px 32px; max-width: 1100px; margin: 0 auto; position: relative;">
+
+    <!-- Section ambient blob -->
+    <div class="blob" style="width: 400px; height: 300px; background: rgba(113,128,255,0.05); top: 80px; left: -100px;"></div>
+
+    <div style="text-align: center; margin-bottom: 64px; position: relative;">
+      <span class="mono-label" style="display: block; margin-bottom: 16px;">features</span>
+      <h2 style="font-size: 32px; font-weight: 500; letter-spacing: -0.02em; color: #ffffff; margin: 0 0 16px;">
+        Designed for the way teams actually work
+      </h2>
+      <p style="font-size: 16px; color: #6b6f76; max-width: 440px; margin: 0 auto; line-height: 1.65;">
+        Not a wiki. Not a CMS. A sync primitive you can build workflows on top of.
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; position: relative;">
+
+      <!-- Feature 1 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L12.5 7.5H18L13.5 11L15.5 17L10 13.5L4.5 17L6.5 11L2 7.5H7.5L10 2Z" stroke="#7180ff" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">SHA-256 conflict detection</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Every document is hashed before sync. Specter catches divergence before it becomes a conflict, not after.
+        </p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M4 10h12M4 6h8M4 14h6" stroke="#7180ff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">Branch namespacing</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Your git branch is your namespace. Feature branches get isolated document states. Merging branches merges knowledge.
+        </p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="7.5" stroke="#7180ff" stroke-width="1.4"/>
+            <path d="M10 6v4l3 2" stroke="#7180ff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">Full document history</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Every push creates a numbered revision. Diff any two revisions, restore old versions, trace who changed what and when.
+        </p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M3 5h14M3 10h9M3 15h5" stroke="#7180ff" stroke-width="1.4" stroke-linecap="round"/>
+            <circle cx="16" cy="14" r="3" stroke="#7180ff" stroke-width="1.4"/>
+            <path d="M18.5 16.5l-1.5-1.5" stroke="#7180ff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">Propose &amp; review workflow</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Stage a proposal before it goes live. Reviewers see a clean diff. Approve or reject from the CLI or the dashboard.
+        </p>
+      </div>
+
+      <!-- Feature 5 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="2" y="3" width="16" height="14" rx="2" stroke="#7180ff" stroke-width="1.4"/>
+            <path d="M6 8l2.5 2.5L6 13M10 13h4" stroke="#7180ff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">Agent-native API</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Machine-readable output on every command. Pipe Specter into your CI, your LLM agent, your custom toolchain. It just works.
+        </p>
+      </div>
+
+      <!-- Feature 6 -->
+      <div class="feature-card">
+        <div class="card-glow"></div>
+        <div style="margin-bottom: 16px;">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2l1.6 4.9H17l-4.2 3.1 1.6 4.9L10 12 5.6 14.9l1.6-4.9L3 7.9h5.4L10 2z" stroke="#7180ff" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h3 style="font-size: 15px; font-weight: 500; color: #ffffff; margin: 0 0 8px; letter-spacing: -0.01em;">Invite &amp; access control</h3>
+        <p style="font-size: 14px; color: #6b6f76; line-height: 1.6; margin: 0;">
+          Add collaborators to your project with a single command. Token-based auth keeps access manageable as teams scale.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="divider" style="max-width: 1100px; margin: 0 auto;"></div>
+
+  <!-- CLI Showcase -->
+  <section id="cli" style="padding: 96px 32px; max-width: 1100px; margin: 0 auto; position: relative;">
+
+    <!-- Ambient blob right -->
+    <div class="blob" style="width: 360px; height: 360px; background: rgba(113,128,255,0.06); top: 40px; right: -80px;"></div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; position: relative;">
+
+      <div>
+        <span class="mono-label" style="display: block; margin-bottom: 16px;">the cli</span>
+        <h2 style="font-size: 32px; font-weight: 500; letter-spacing: -0.02em; color: #ffffff; margin: 0 0 20px;">
+          Every workflow,<br/>
+          <span style="color: #6b6f76; font-style: italic; font-family: Georgia, serif;">from the terminal</span>
+        </h2>
+        <p style="font-size: 15px; color: #6b6f76; line-height: 1.7; margin: 0 0 32px;">
+          No dashboard required. Specter's CLI covers the full lifecycle: init, push, pull, diff, status, propose, review, history, and invite. Composable, scriptable, fast.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #7180ff; flex-shrink: 0;"></div>
+            <span style="font-size: 14px; color: #6b6f76;"><code style="font-family: ui-monospace, monospace; color: #a8a8b8; font-size: 13px;">specter status</code> — see local vs remote in one glance</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #7180ff; flex-shrink: 0;"></div>
+            <span style="font-size: 14px; color: #6b6f76;"><code style="font-family: ui-monospace, monospace; color: #a8a8b8; font-size: 13px;">specter diff</code> — unified diff for any document</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #7180ff; flex-shrink: 0;"></div>
+            <span style="font-size: 14px; color: #6b6f76;"><code style="font-family: ui-monospace, monospace; color: #a8a8b8; font-size: 13px;">specter history</code> — full revision log per document</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 4px; height: 4px; border-radius: 50%; background: #7180ff; flex-shrink: 0;"></div>
+            <span style="font-size: 14px; color: #6b6f76;"><code style="font-family: ui-monospace, monospace; color: #a8a8b8; font-size: 13px;">specter invite</code> — add teammates by email</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal showcase -->
+      <div>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="terminal-dot" style="background: #ff5f57;"></div>
+            <div class="terminal-dot" style="background: #febc2e;"></div>
+            <div class="terminal-dot" style="background: #28c840;"></div>
+            <span style="margin-left: 8px; font-family: ui-monospace, monospace; font-size: 11px; color: #3d4147;">specter — feature/onboarding-docs</span>
+          </div>
+          <pre><span class="dim">$</span> <span class="cmd">specter status</span>
+
+<span class="output">  project  hiasinho/specter</span>
+<span class="output">  branch   feature/onboarding-docs</span>
+<span class="output">  revision 42</span>
+
+<span class="ok">  ✓</span> <span class="output">docs/quickstart.md</span>          <span class="output">synced</span>
+<span class="warn">  ~</span> <span class="output">docs/architecture.md</span>         <span class="warn">modified</span>
+<span class="ok">  +</span> <span class="output">docs/agents-guide.md</span>         <span class="ok">new</span>
+
+<span class="dim">$</span> <span class="cmd">specter push</span>
+
+<span class="output">  hashing documents...</span>
+<span class="output">  2 changed, 1 added</span>
+<span class="ok">  ✓</span> <span class="output">pushed revision 43</span>
+
+<span class="dim">$</span> <span class="cmd">specter propose</span> <span class="flag">--message</span> <span class="path">"Add agent onboarding"</span>
+
+<span class="ok">  ✓</span> <span class="output">proposal #7 created</span>
+<span class="output">  share: specter.sh/hiasinho/specter/proposals/7</span></pre>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Second terminal row: diff -->
+    <div style="margin-top: 40px;">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot" style="background: #ff5f57;"></div>
+          <div class="terminal-dot" style="background: #febc2e;"></div>
+          <div class="terminal-dot" style="background: #28c840;"></div>
+          <span style="margin-left: 8px; font-family: ui-monospace, monospace; font-size: 11px; color: #3d4147;">specter diff — revision history</span>
+        </div>
+        <pre><span class="dim">$</span> <span class="cmd">specter history</span> <span class="path">docs/architecture.md</span>
+
+<span class="output">  rev  date                  message</span>
+<span class="output">  ───  ────────────────────  ───────────────────────────────────</span>
+<span class="output">  43   2026-03-13 09:41:02   Add agent onboarding</span>
+<span class="output">  41   2026-03-12 14:22:18   Expand API section</span>
+<span class="output">  38   2026-03-11 10:05:44   Initial architecture doc</span>
+
+<span class="dim">$</span> <span class="cmd">specter diff</span> <span class="path">docs/architecture.md</span> <span class="flag">--from</span> <span class="output">38</span> <span class="flag">--to</span> <span class="output">43</span>
+
+<span class="output">  --- docs/architecture.md @ rev 38</span>
+<span class="output">  +++ docs/architecture.md @ rev 43</span>
+<span class="ok">  +## Agent Integration</span>
+<span class="ok">  +</span>
+<span class="ok">  +Specter exposes machine-readable output on every command.</span>
+<span class="ok">  +Pipe output into your agent's context window via stdin.</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" style="max-width: 1100px; margin: 0 auto;"></div>
+
+  <!-- CTA band -->
+  <section style="padding: 96px 32px; position: relative; overflow: hidden; text-align: center;">
+
+    <div class="blob" style="width: 600px; height: 300px; background: rgba(113,128,255,0.08); top: 0; left: 50%; transform: translateX(-50%);"></div>
+
+    <div style="position: relative; max-width: 600px; margin: 0 auto;">
+
+      <div style="display: flex; justify-content: center; margin-bottom: 32px;">
+        <div class="dot-grid" style="opacity: 0.5;">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <h2 style="font-size: 40px; font-weight: 500; letter-spacing: -0.025em; color: #ffffff; margin: 0 0 20px;">
+        Start syncing in minutes
+      </h2>
+      <p style="font-size: 16px; color: #6b6f76; margin: 0 0 36px; line-height: 1.65;">
+        One config file. One token. Your entire document layer, in sync.
+      </p>
+
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
+        <a href="#" style="font-size: 14px; font-weight: 500; color: #ffffff; background: #7180ff; padding: 10px 22px; border-radius: 7px; text-decoration: none; transition: opacity 200ms;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+          Get started free
+        </a>
+        <a href="https://github.com" style="font-size: 14px; font-weight: 500; color: #6b6f76; padding: 10px 22px; border: 1px solid #1c1e21; border-radius: 7px; text-decoration: none; background: #0f0f11; transition: color 200ms;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#6b6f76'">
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="border-top: 1px solid #1c1e21; padding: 40px 32px;">
+    <div style="max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+          <rect x="2" y="2" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.9"/>
+          <rect x="11" y="2" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.5"/>
+          <rect x="2" y="11" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.5"/>
+          <rect x="11" y="11" width="7" height="7" rx="1.5" fill="#7180ff" opacity="0.25"/>
+        </svg>
+        <span style="font-size: 14px; font-weight: 500; color: #6b6f76;">Specter</span>
+        <span style="color: #2a2d34; font-size: 14px;">·</span>
+        <span class="mono-label">open source</span>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <a href="#" style="font-size: 13px; color: #3d4147; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#6b6f76'" onmouseout="this.style.color='#3d4147'">Docs</a>
+        <a href="#" style="font-size: 13px; color: #3d4147; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#6b6f76'" onmouseout="this.style.color='#3d4147'">GitHub</a>
+        <a href="#" style="font-size: 13px; color: #3d4147; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#6b6f76'" onmouseout="this.style.color='#3d4147'">API</a>
+        <a href="#" style="font-size: 13px; color: #3d4147; text-decoration: none; transition: color 200ms;" onmouseover="this.style.color='#6b6f76'" onmouseout="this.style.color='#3d4147'">Changelog</a>
+      </div>
+
+    </div>
+  </footer>
+
+</body>
+</html>
