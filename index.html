@@ -28,74 +28,114 @@
     </p>
   </section>
 
-  <!-- How It Works -->
+  <!-- The Flow -->
   <section class="px-6 py-24 max-w-4xl mx-auto">
-    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">How it works</h2>
+    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-4">How it works</h2>
+    <p class="text-zinc-400 mb-12 max-w-2xl leading-relaxed">
+      Specter sits between your repo and your collaborators. You push docs from the CLI, everyone else — humans and agents — works through the API.
+    </p>
+
+    <!-- Architecture diagram -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-6 sm:p-8 mb-16 overflow-x-auto">
+      <pre class="text-xs sm:text-sm text-zinc-300 leading-relaxed"><code><span class="text-zinc-500">your repo</span>                     <span class="text-zinc-500">specter service</span>                <span class="text-zinc-500">collaborators</span>
+
+┌──────────────┐    push    ┌───────────────────┐    read    ┌──────────────┐
+│  specs/      │───────────▶│                   │◀───────────│  Teammates   │
+│  docs/       │◀───────────│   Documents       │            │              │
+│              │    pull    │   ├─ versioned     │  propose   ├──────────────┤
+│  .specter    │            │   ├─ branch-aware  │───────────▶│  AI Agents   │
+│  (config)    │            │   └─ hash-tracked  │            │              │
+└──────────────┘            │                   │  review    ├──────────────┤
+                            │   Proposals       │◀───────────│  Reviewers   │
+  <span class="text-emerald-400">specter push</span>               │   ├─ replace      │            └──────────────┘
+  <span class="text-emerald-400">specter pull</span>               │   ├─ insert       │
+  <span class="text-emerald-400">specter status</span>             │   ├─ delete       │            <span class="text-zinc-500">roles:</span>
+  <span class="text-emerald-400">specter diff</span>               │   └─ annotate     │            owner / editor
+  <span class="text-emerald-400">specter proposals</span>          │                   │            reviewer / reader
+                            │   Access Control  │
+                            │   └─ invite codes │
+                            └───────────────────┘</code></pre>
+    </div>
+
+    <!-- Three steps -->
     <div class="grid sm:grid-cols-3 gap-8">
       <div>
         <div class="text-3xl font-bold text-zinc-600 mb-3">01</div>
-        <h3 class="text-lg font-semibold mb-2">Configure</h3>
+        <h3 class="text-lg font-semibold mb-2">Point it at your docs</h3>
         <p class="text-zinc-400 text-sm leading-relaxed">
-          Drop a <code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">.specter</code> file in your repo to define which folders to sync.
+          A <code class="text-emerald-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">.specter</code> file tells the CLI which folders to sync. That's the only setup.
         </p>
-        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>project: my-project
+        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>project: acme/api-specs
 paths:
   - specs/
-  - docs/architecture/</code></pre>
+  - docs/architecture/
+exclude:
+  - specs/drafts/</code></pre>
       </div>
       <div>
         <div class="text-3xl font-bold text-zinc-600 mb-3">02</div>
-        <h3 class="text-lg font-semibold mb-2">Push</h3>
+        <h3 class="text-lg font-semibold mb-2">Push and pull</h3>
         <p class="text-zinc-400 text-sm leading-relaxed">
-          Your documents land on Specter, versioned by branch. The CLI auto-detects your git branch.
+          The CLI detects your git branch, hashes content for conflict detection, and syncs only what changed.
         </p>
         <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>$ specter push
-Pushing 12 documents to main...
-✓ Synced in 340ms</code></pre>
+Pushing 12 docs to main...
+  3 created, 2 updated, 7 unchanged
+✓ Synced in 340ms
+
+$ specter status
+  M specs/auth.md (local changes)
+  ↓ specs/api.md  (remote update)</code></pre>
       </div>
       <div>
         <div class="text-3xl font-bold text-zinc-600 mb-3">03</div>
-        <h3 class="text-lg font-semibold mb-2">Collaborate</h3>
+        <h3 class="text-lg font-semibold mb-2">Agents and humans propose</h3>
         <p class="text-zinc-400 text-sm leading-relaxed">
-          Teammates and AI agents read, review, and propose changes through the API.
+          Anyone with access can read docs and submit proposals — structured changes anchored to content, not line numbers.
         </p>
-        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>POST /projects/my-project/proposals
-{
-  "document": "specs/auth.md",
+        <pre class="mt-4 text-xs bg-zinc-900 border border-zinc-800 rounded-lg p-4 text-zinc-300 overflow-x-auto"><code>$ specter proposals
+2 pending for specs/auth.md
+
+$ specter review abc123 accept
+✓ Proposal accepted
+
+<span class="text-zinc-500"># or via the API:</span>
+POST /proposals/acme/api-specs
+{ "document_path": "specs/auth.md",
   "type": "replace",
-  "body": "..."
-}</code></pre>
+  "anchor_content": "## Auth Flow",
+  "body": "..." }</code></pre>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
+  <!-- Why Specter -->
   <section class="px-6 py-24 max-w-4xl mx-auto border-t border-zinc-800">
-    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">What it does</h2>
+    <h2 class="text-sm text-emerald-400 tracking-wider uppercase mb-12">Why Specter</h2>
     <div class="grid sm:grid-cols-2 gap-x-12 gap-y-8">
       <div>
-        <h3 class="font-semibold mb-1">Document sync</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">Push markdown from any repo, pull updates back. Content hashing and revisions keep everything in order.</p>
+        <h3 class="font-semibold mb-1">Docs stay in your repo</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Your markdown files live where your code lives. Specter syncs them — it doesn't own them. Pull anytime to get changes back.</p>
       </div>
       <div>
-        <h3 class="font-semibold mb-1">Branch-aware</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">Documents follow your git branches, with automatic fallback to main when a branch doesn't exist on the service.</p>
+        <h3 class="font-semibold mb-1">Built for agents</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">RESTful API with token auth. LLM agents can read your specs, propose changes, and get reviewed — no git access needed.</p>
       </div>
       <div>
-        <h3 class="font-semibold mb-1">Proposals</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">Structured feedback — replace, insert, delete, or annotate. Anchored to content, not line numbers.</p>
+        <h3 class="font-semibold mb-1">Conflict detection, not surprises</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Content hashing and revision tracking. Push is rejected if someone else changed the same doc. You always know before you overwrite.</p>
       </div>
       <div>
-        <h3 class="font-semibold mb-1">Agent-friendly API</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">RESTful, token-based, designed for LLM agents to read documents and submit proposals programmatically.</p>
+        <h3 class="font-semibold mb-1">Branch-aware by default</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Documents follow your git branches automatically. Work on a feature branch, sync its docs separately, merge when ready.</p>
       </div>
       <div>
-        <h3 class="font-semibold mb-1">Role-based access</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">Owner, editor, reviewer, reader. Invite collaborators with scoped permissions via shareable invite codes.</p>
+        <h3 class="font-semibold mb-1">Proposals, not PRs</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Lightweight structured feedback — replace, insert, delete, annotate. Anchored to content so they survive edits. Review from CLI or API.</p>
       </div>
       <div>
-        <h3 class="font-semibold mb-1">No infrastructure</h3>
-        <p class="text-zinc-400 text-sm leading-relaxed">Runs on Supabase. No servers to manage, no deploy pipelines. Push your docs and go.</p>
+        <h3 class="font-semibold mb-1">Zero infrastructure</h3>
+        <p class="text-zinc-400 text-sm leading-relaxed">Single binary CLI, hosted service. No servers, no deploy pipelines, no config beyond one YAML file.</p>
       </div>
     </div>
   </section>
