@@ -80,6 +80,45 @@ type InviteRedeemResponse struct {
 	Role    string  `json:"role"`
 }
 
+// Author represents a user in history responses.
+type Author struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+// RevisionMeta is a single entry in a document's revision history.
+type RevisionMeta struct {
+	Revision    int    `json:"revision"`
+	ContentHash string `json:"content_hash"`
+	Author      Author `json:"author"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// DocumentHistory is the response from listing a document's revision history.
+type DocumentHistory struct {
+	Path      string         `json:"path"`
+	Revisions []RevisionMeta `json:"revisions"`
+}
+
+// DocumentRevision is the response from fetching a specific revision.
+type DocumentRevision struct {
+	Path        string `json:"path"`
+	Revision    int    `json:"revision"`
+	ContentMD   string `json:"content_md"`
+	ContentHash string `json:"content_hash"`
+	Author      Author `json:"author"`
+	CreatedAt   string `json:"created_at"`
+}
+
+// DocumentDiff is the response from comparing two revisions.
+type DocumentDiff struct {
+	Path         string `json:"path"`
+	FromRevision int    `json:"from_revision"`
+	ToRevision   int    `json:"to_revision"`
+	Diff         string `json:"diff"`
+}
+
 // ConflictDetail describes a single document conflict from a push.
 type ConflictDetail struct {
 	Path            string `json:"path"`

@@ -218,6 +218,54 @@ func (c *Client) RedeemInvite(code string) (*InviteRedeemResponse, error) {
 	return decodeResponse[InviteRedeemResponse](resp)
 }
 
+// ListDocumentHistory fetches revision history for a document.
+func (c *Client) ListDocumentHistory(project, docPath, branch string, limit int) (*DocumentHistory, error) {
+	params := url.Values{}
+	if branch != "" {
+		params.Set("branch", branch)
+	}
+	if limit > 0 {
+		params.Set("limit", fmt.Sprintf("%d", limit))
+	}
+	path := fmt.Sprintf("/document-history/%s/%s/history", project, docPath)
+	if len(params) > 0 {
+		path += "?" + params.Encode()
+	}
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[DocumentHistory](resp)
+}
+
+// GetDocumentRevision fetches a specific revision's full content.
+func (c *Client) GetDocumentRevision(project, docPath string, revision int) (*DocumentRevision, error) {
+	path := fmt.Sprintf("/document-history/%s/%s/history/%d", project, docPath, revision)
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[DocumentRevision](resp)
+}
+
+// GetDocumentDiff compares two revisions of a document.
+func (c *Client) GetDocumentDiff(project, docPath, branch string, from, to int) (*DocumentDiff, error) {
+	params := url.Values{}
+	if branch != "" {
+		params.Set("branch", branch)
+	}
+	params.Set("from", fmt.Sprintf("%d", from))
+	if to > 0 {
+		params.Set("to", fmt.Sprintf("%d", to))
+	}
+	path := fmt.Sprintf("/document-history/%s/%s/diff?%s", project, docPath, params.Encode())
+	resp, err := c.do("GET", path, nil)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[DocumentDiff](resp)
+}
+
 // UpdateProposalStatus accepts or rejects a proposal.
 func (c *Client) UpdateProposalStatus(project, id, status string) error {
 	body := map[string]string{"status": status}
