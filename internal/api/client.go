@@ -72,6 +72,19 @@ func (c *Client) Me() (*User, error) {
 	return decodeResponse[User](resp)
 }
 
+// ListProjects fetches projects the authenticated user is a member of.
+func (c *Client) ListProjects() ([]Project, error) {
+	resp, err := c.do("GET", "/projects", nil)
+	if err != nil {
+		return nil, err
+	}
+	result, err := decodeResponse[[]Project](resp)
+	if err != nil {
+		return nil, err
+	}
+	return *result, nil
+}
+
 // CreateProject creates a new project on the service.
 func (c *Client) CreateProject(slug, name string) (*Project, error) {
 	body := map[string]string{"slug": slug, "name": name}
