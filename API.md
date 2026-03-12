@@ -192,7 +192,7 @@ Bulk push documents. Used by the CLI's `push` command.
 
 **Response (success):**
 ```json
-{ "created": ["specs/foo.md"], "updated": ["specs/bar.md"], "unchanged": [] }
+{ "created": ["specs/foo.md"], "updated": ["specs/bar.md"], "unchanged": [], "synced_at": "ISO-8601 timestamp" }
 ```
 
 **Response (conflict, 409):**
