@@ -68,6 +68,10 @@ Create a project. The authenticated user becomes the owner.
 
 List projects the user is a member of.
 
+#### `DELETE /projects/:slug`
+
+Delete a project and all its data (branches, documents, memberships, proposals). Owner only.
+
 ### Invites
 
 #### `POST /projects/:slug/invites`
