@@ -85,6 +85,20 @@ func (c *Client) ListProjects() ([]Project, error) {
 	return *result, nil
 }
 
+// DeleteProject deletes a project. Owner only.
+func (c *Client) DeleteProject(project string) error {
+	resp, err := c.do("DELETE", fmt.Sprintf("/projects/%s", project), nil)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("API error (%d): %s", resp.StatusCode, string(body))
+	}
+	return nil
+}
+
 // CreateProject creates a new project on the service.
 func (c *Client) CreateProject(slug, name string) (*Project, error) {
 	body := map[string]string{"slug": slug, "name": name}
