@@ -266,6 +266,16 @@ func (c *Client) GetDocumentDiff(project, docPath, branch string, from, to int) 
 	return decodeResponse[DocumentDiff](resp)
 }
 
+// Register creates a new user account.
+func (c *Client) Register(email, username, inviteCode string) (*RegisterResponse, error) {
+	body := map[string]string{"email": email, "username": username, "invite_code": inviteCode}
+	resp, err := c.do("POST", "/register", body)
+	if err != nil {
+		return nil, err
+	}
+	return decodeResponse[RegisterResponse](resp)
+}
+
 // UpdateProposalStatus accepts or rejects a proposal.
 func (c *Client) UpdateProposalStatus(project, id, status string) error {
 	body := map[string]string{"status": status}

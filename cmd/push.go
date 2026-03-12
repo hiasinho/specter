@@ -59,9 +59,14 @@ var pushCmd = &cobra.Command{
 			return err
 		}
 
+		pushDocs := make([]api.PushDocument, len(docs))
+		for i, d := range docs {
+			pushDocs[i] = api.PushDocument{Path: d.Path, ContentMD: d.ContentMD}
+		}
+
 		req := &api.SyncPushRequest{
 			Branch:    branch,
-			Documents: docs,
+			Documents: pushDocs,
 		}
 		if !pushForce && state.SyncedAt != "" {
 			req.BaseRevision = state.SyncedAt

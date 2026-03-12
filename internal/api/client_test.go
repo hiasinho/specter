@@ -42,7 +42,7 @@ func TestClient_Push(t *testing.T) {
 
 	result, err := client.Push("hiasinho/my-project", &SyncPushRequest{
 		Branch: "main",
-		Documents: []Document{
+		Documents: []PushDocument{
 			{Path: "specs/api.md", ContentMD: "# API"},
 		},
 	})
@@ -67,7 +67,7 @@ func TestClient_Pull(t *testing.T) {
 		}
 
 		json.NewEncoder(w).Encode(SyncPullResponse{
-			Documents: []Document{
+			Documents: []PushDocument{
 				{Path: "specs/api.md", ContentMD: "# API", ContentHash: "abc", Revision: 5},
 			},
 			SyncedAt: "2025-01-01T00:00:00Z",
@@ -97,7 +97,7 @@ func TestClient_PullWithSince(t *testing.T) {
 			t.Errorf("expected since=3, got %q", since)
 		}
 		json.NewEncoder(w).Encode(SyncPullResponse{
-			Documents: []Document{},
+			Documents: []PushDocument{},
 			SyncedAt:  "2025-01-01T00:00:00Z",
 		})
 	}))

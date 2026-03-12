@@ -10,11 +10,17 @@ type Document struct {
 	Revision    int    `json:"revision,omitempty"`
 }
 
+// PushDocument contains only the fields sent when pushing documents to the API.
+type PushDocument struct {
+	Path      string `json:"path"`
+	ContentMD string `json:"content_md"`
+}
+
 // SyncPushRequest is the body for POST /sync/:owner/:slug.
 type SyncPushRequest struct {
-	Branch       string     `json:"branch"`
-	BaseRevision string     `json:"base_revision,omitempty"`
-	Documents    []Document `json:"documents"`
+	Branch       string         `json:"branch"`
+	BaseRevision string         `json:"base_revision,omitempty"`
+	Documents    []PushDocument `json:"documents"`
 }
 
 // SyncPushResponse is the response from POST /sync/:owner/:slug.
@@ -117,6 +123,15 @@ type DocumentDiff struct {
 	FromRevision int    `json:"from_revision"`
 	ToRevision   int    `json:"to_revision"`
 	Diff         string `json:"diff"`
+}
+
+// RegisterResponse is the response from POST /register.
+type RegisterResponse struct {
+	ID          string   `json:"id"`
+	Email       string   `json:"email"`
+	Username    string   `json:"username"`
+	Token       string   `json:"token"`
+	InviteCodes []string `json:"invite_codes"`
 }
 
 // ConflictDetail describes a single document conflict from a push.
