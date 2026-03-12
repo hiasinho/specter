@@ -10,6 +10,10 @@ RESTful API for syncing and collaborating on markdown documents. Designed for CL
 
 All endpoints (except `POST /register`) require a user token via the `x-specter-token` header.
 
+## Project identifiers
+
+Projects are namespaced under their owner's username: `owner/slug` (e.g. `hiasinho/specter`). All endpoints that operate on a project use `:owner/:slug` in the URL path.
+
 ## Endpoints
 
 ### Users
@@ -20,9 +24,10 @@ Create a new user. No auth required.
 
 **Body:**
 ```json
-{ "email": "user@example.com", "username": "optional-name", "invite_code": "a1b2c3d4e5f6a7b8" }
+{ "email": "user@example.com", "username": "my-username", "invite_code": "a1b2c3d4e5f6a7b8" }
 ```
 
+`username` is required — lowercase alphanumeric + hyphens, 2-39 chars.
 `invite_code` is required — a valid, unredeemed access code. On success, 3 new access codes are auto-generated for the user.
 
 **Response:**
@@ -30,7 +35,7 @@ Create a new user. No auth required.
 {
   "id": "uuid",
   "email": "user@example.com",
-  "username": "optional-name",
+  "username": "my-username",
   "token": "hex-token",
   "invite_codes": ["code1", "code2", "code3"]
 }
@@ -45,7 +50,7 @@ Get current user info. Includes the user's access codes (for inviting others to 
 {
   "id": "uuid",
   "email": "user@example.com",
-  "username": "optional-name",
+  "username": "my-username",
   "invite_codes": [
     { "code": "a1b2c3d4e5f6a7b8", "redeemed": false },
     { "code": "c3d4e5f6a7b8a1b2", "redeemed": true }
@@ -57,30 +62,56 @@ Get current user info. Includes the user's access codes (for inviting others to 
 
 #### `POST /projects`
 
-Create a project. The authenticated user becomes the owner.
+Create a project. The authenticated user becomes the owner. The project is namespaced under the user's username.
 
 **Body:**
 ```json
 { "name": "My Project", "slug": "my-project" }
 ```
 
+**Response:**
+```json
+{
+  "id": "uuid",
+  "owner": "my-username",
+  "slug": "my-project",
+  "full_name": "my-username/my-project",
+  "name": "My Project",
+  "default_branch": "main"
+}
+```
+
 #### `GET /projects`
 
 List projects the user is a member of.
 
-#### `DELETE /projects/:slug`
+**Response:**
+```json
+[
+  {
+    "id": "uuid",
+    "owner": "hiasinho",
+    "slug": "specter",
+    "full_name": "hiasinho/specter",
+    "name": "Specter",
+    "role": "owner"
+  }
+]
+```
+
+#### `DELETE /projects/:owner/:slug`
 
 Delete a project and all its data (branches, documents, memberships, proposals). Owner only.
 
 ### Invites
 
-#### `POST /invites/:slug`
+#### `POST /invites`
 
-Create an invite for a role. Owner only.
+Create an invite for a role. Owner only. Project is specified in the body as `owner/slug`.
 
 **Body:**
 ```json
-{ "role": "editor|reviewer|reader" }
+{ "project": "hiasinho/specter", "role": "editor|reviewer|reader" }
 ```
 
 **Response:**
@@ -88,17 +119,36 @@ Create an invite for a role. Owner only.
 { "code": "invite-code", "role": "editor" }
 ```
 
-#### `POST /invites/:code/redeem`
+#### `POST /invites/redeem`
 
 Redeem an invite. Adds the authenticated user as a member with the invite's role.
 
+**Body:**
+```json
+{ "code": "invite-code" }
+```
+
+**Response:**
+```json
+{
+  "project": {
+    "id": "uuid",
+    "owner": "hiasinho",
+    "slug": "specter",
+    "full_name": "hiasinho/specter",
+    "name": "Specter"
+  },
+  "role": "editor"
+}
+```
+
 ### Documents
 
-#### `GET /documents/:slug?branch=:branch`
+#### `GET /documents/:owner/:slug?branch=:branch`
 
 List documents for a project and branch.
 
-#### `GET /documents/:slug/:path?branch=:branch`
+#### `GET /documents/:owner/:slug/:path?branch=:branch`
 
 Get a single document's content.
 
@@ -107,7 +157,7 @@ Get a single document's content.
 { "path": "specs/foo.md", "content_md": "...", "content_hash": "sha256", "revision": 3 }
 ```
 
-#### `PUT /documents/:slug/:path?branch=:branch`
+#### `PUT /documents/:owner/:slug/:path?branch=:branch`
 
 Create or update a document. Requires editor role or above.
 
@@ -116,13 +166,13 @@ Create or update a document. Requires editor role or above.
 { "content_md": "# Document content..." }
 ```
 
-#### `DELETE /documents/:slug/:path?branch=:branch`
+#### `DELETE /documents/:owner/:slug/:path?branch=:branch`
 
 Delete a document. Requires editor role or above.
 
 ### Sync
 
-#### `POST /sync/:slug`
+#### `POST /sync/:owner/:slug`
 
 Bulk push documents. Used by the CLI's `push` command.
 
@@ -158,7 +208,7 @@ Bulk push documents. Used by the CLI's `push` command.
 }
 ```
 
-#### `GET /sync/:slug?branch=:branch&since=:revision`
+#### `GET /sync/:owner/:slug?branch=:branch&since=:revision`
 
 Get documents changed since a revision. Used by the CLI's `pull` command. Omit `since` to get all documents.
 
@@ -174,11 +224,11 @@ Get documents changed since a revision. Used by the CLI's `pull` command. Omit `
 
 ### Proposals
 
-#### `GET /proposals/:slug?document=:path&status=pending`
+#### `GET /proposals/:owner/:slug?document=:path&status=pending`
 
 List proposals. Filter by document path and/or status.
 
-#### `POST /proposals/:slug`
+#### `POST /proposals/:owner/:slug`
 
 Create a proposal. Requires reviewer role or above.
 
@@ -194,7 +244,7 @@ Create a proposal. Requires reviewer role or above.
 }
 ```
 
-#### `PATCH /proposals/:slug/:id`
+#### `PATCH /proposals/:owner/:slug/:id`
 
 Accept or reject a proposal. Requires editor role or above.
 
